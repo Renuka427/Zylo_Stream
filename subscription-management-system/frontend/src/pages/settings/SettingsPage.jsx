@@ -10,16 +10,32 @@ import {
   Save,
   Plus,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Database,
+  RotateCcw,
+  Palette,
+  Sliders,
+  Trash2,
+  HardDrive
 } from 'lucide-react';
 import { useMockData } from '../../contexts/MockDataContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 export const SettingsPage = () => {
-  const { settings, updateSettings } = useMockData();
+  const {
+    settings,
+    updateSettings,
+    resetDemoData,
+    customers,
+    subscriptions,
+    invoices,
+    payments,
+    discounts
+  } = useMockData();
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState('business');
@@ -27,6 +43,11 @@ export const SettingsPage = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('Billing Ops');
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
+  // Appearance local controls
+  const [compactTables, setCompactTables] = useState(false);
+  const [smoothAnimations, setSmoothAnimations] = useState(true);
 
   const tabs = [
     { id: 'business', label: 'Business Profile', icon: Building },
@@ -35,10 +56,16 @@ export const SettingsPage = () => {
     { id: 'invoices', label: 'Invoice Rules', icon: Receipt },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'team', label: 'Team & Access', icon: Users },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'demo', label: 'Demo Data & Cache', icon: Database }
   ];
 
   const handleSave = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    if (activeTab === 'appearance' || activeTab === 'demo') {
+      showToast('Visual preferences updated!');
+      return;
+    }
     updateSettings(activeTab, formData[activeTab]);
     showToast('Preferences updated and saved to mock state!');
   };
@@ -55,14 +82,29 @@ export const SettingsPage = () => {
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
     };
 
+    const updatedTeam = [...(formData.team || []), newMember];
     setFormData((prev) => ({
       ...prev,
-      team: [...(prev.team || []), newMember]
+      team: updatedTeam
     }));
+    updateSettings('team', updatedTeam);
 
     setIsInviteModalOpen(false);
     setInviteEmail('');
     showToast(`Invitation sent to ${inviteEmail} (${inviteRole})`);
+  };
+
+  const handleRemoveTeamMember = (memberId) => {
+    const updated = (formData.team || []).filter((m) => m.id !== memberId);
+    setFormData((prev) => ({ ...prev, team: updated }));
+    updateSettings('team', updated);
+    showToast('Team member removed from workspace.');
+  };
+
+  const handleExecuteReset = () => {
+    resetDemoData();
+    setIsResetConfirmOpen(false);
+    showToast('Demo environment restored to pristine default state.', 'info');
   };
 
   return (
@@ -77,17 +119,19 @@ export const SettingsPage = () => {
             System & Billing Preferences
           </h1>
           <p className="text-xs text-espresso-muted mt-1">
-            Global tax parameters, proration policies, automated dunning, and organization roles.
+            Global tax parameters, proration policies, automated dunning, UI theme, and organization roles.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          icon={Save}
-          onClick={handleSave}
-        >
-          Save Changes
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            icon={Save}
+            onClick={handleSave}
+          >
+            Save Changes
+          </Button>
+        </div>
       </div>
 
       {/* Tabs Navigation */}
@@ -235,7 +279,7 @@ export const SettingsPage = () => {
                         tax: { ...formData.tax, automaticTaxCalculation: e.target.checked }
                       })
                     }
-                    className="w-4 h-4 accent-cherry rounded"
+                    className="w-4 h-4 accent-cherry rounded cursor-pointer"
                   />
                 </div>
 
@@ -360,7 +404,7 @@ export const SettingsPage = () => {
                         billing: { ...formData.billing, autoFinalizeDrafts: e.target.checked }
                       })
                     }
-                    className="w-4 h-4 accent-cherry rounded"
+                    className="w-4 h-4 accent-cherry rounded cursor-pointer"
                   />
                   <span className="font-semibold text-espresso">Auto-finalize invoices on scheduled cycle run</span>
                 </div>
@@ -389,7 +433,7 @@ export const SettingsPage = () => {
                         notifications: { ...formData.notifications, emailOnPaymentSuccess: e.target.checked }
                       })
                     }
-                    className="w-4 h-4 accent-cherry rounded"
+                    className="w-4 h-4 accent-cherry rounded cursor-pointer"
                   />
                 </div>
 
@@ -407,7 +451,7 @@ export const SettingsPage = () => {
                         notifications: { ...formData.notifications, emailOnPaymentFailure: e.target.checked }
                       })
                     }
-                    className="w-4 h-4 accent-cherry rounded"
+                    className="w-4 h-4 accent-cherry rounded cursor-pointer"
                   />
                 </div>
 
@@ -425,7 +469,7 @@ export const SettingsPage = () => {
                         notifications: { ...formData.notifications, sendRenewalReminderDaysBefore: e.target.checked ? 14 : 0 }
                       })
                     }
-                    className="w-4 h-4 accent-cherry rounded"
+                    className="w-4 h-4 accent-cherry rounded cursor-pointer"
                   />
                 </div>
               </div>
@@ -464,21 +508,142 @@ export const SettingsPage = () => {
                         <p className="text-espresso-muted text-[11px]">{member.email}</p>
                       </div>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-champagne text-cherry-dark border border-stone-warm">
-                      {member.role}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-champagne text-cherry-dark border border-stone-warm">
+                        {member.role}
+                      </span>
+                      {member.role !== 'Administrator' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTeamMember(member.id)}
+                          className="text-stone-400 hover:text-rose-600 p-1"
+                          title="Remove user"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Save Button */}
-          <div className="pt-4 border-t border-stone-warm flex justify-end">
-            <Button type="submit" variant="primary">
-              Save Preferences
-            </Button>
-          </div>
+          {/* 7. Appearance & Interface */}
+          {activeTab === 'appearance' && (
+            <div className="space-y-4">
+              <h3 className="font-display text-lg font-bold text-espresso border-b border-stone-warm pb-2">
+                Theme & Interface Presentation
+              </h3>
+              
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-champagne-light border border-stone-warm">
+                  <div>
+                    <p className="font-bold text-espresso">Cherry Red & Champagne Luxury Palette</p>
+                    <p className="text-espresso-muted text-[11px]">Primary (#C41E3A), Gold Accent (#D6B779), Ivory Surface (#FFFAF2).</p>
+                  </div>
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cherry text-ivory font-bold text-[10px]">
+                    ACTIVE BRAND
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-champagne-light border border-stone-warm">
+                  <div>
+                    <p className="font-bold text-espresso">Compact Table Padding</p>
+                    <p className="text-espresso-muted text-[11px]">Reduces line heights to display more rows simultaneously.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={compactTables}
+                    onChange={(e) => setCompactTables(e.target.checked)}
+                    className="w-4 h-4 accent-cherry rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-champagne-light border border-stone-warm">
+                  <div>
+                    <p className="font-bold text-espresso">Micro-Interactions & Motion</p>
+                    <p className="text-espresso-muted text-[11px]">Framer Motion transitions for cards, drawers, and modal backdrops.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={smoothAnimations}
+                    onChange={(e) => setSmoothAnimations(e.target.checked)}
+                    className="w-4 h-4 accent-cherry rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 8. Demo Data & Cache */}
+          {activeTab === 'demo' && (
+            <div className="space-y-5">
+              <div className="border-b border-stone-warm pb-2">
+                <h3 className="font-display text-lg font-bold text-espresso">
+                  Local Demo Storage & Persistence
+                </h3>
+                <p className="text-xs text-espresso-muted">
+                  All additions, edits, and status transitions are securely cached in your browser’s localStorage.
+                </p>
+              </div>
+
+              {/* Cache Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div className="p-3 rounded-xl bg-champagne-light border border-stone-warm text-center">
+                  <span className="text-[10px] uppercase font-bold text-espresso-muted block">Customers</span>
+                  <span className="font-mono font-bold text-lg text-cherry-dark">{customers.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-champagne-light border border-stone-warm text-center">
+                  <span className="text-[10px] uppercase font-bold text-espresso-muted block">Subscriptions</span>
+                  <span className="font-mono font-bold text-lg text-cherry-dark">{subscriptions.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-champagne-light border border-stone-warm text-center">
+                  <span className="text-[10px] uppercase font-bold text-espresso-muted block">Invoices</span>
+                  <span className="font-mono font-bold text-lg text-cherry-dark">{invoices.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-champagne-light border border-stone-warm text-center">
+                  <span className="text-[10px] uppercase font-bold text-espresso-muted block">Payments</span>
+                  <span className="font-mono font-bold text-lg text-cherry-dark">{payments.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-champagne-light border border-stone-warm text-center">
+                  <span className="text-[10px] uppercase font-bold text-espresso-muted block">Discounts</span>
+                  <span className="font-mono font-bold text-lg text-cherry-dark">{discounts.length}</span>
+                </div>
+              </div>
+
+              {/* Danger Zone: Factory Reset */}
+              <div className="p-4 rounded-xl border border-rose-300 bg-rose-50/50 space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="font-bold text-rose-900 text-sm">Factory Reset Demo Records</h4>
+                    <p className="text-xs text-rose-700/80 mt-0.5">
+                      Clears local cache modifications and re-initializes all entities with pristine demonstration records.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    className="bg-rose-700 hover:bg-rose-800 text-white shrink-0"
+                    icon={RotateCcw}
+                    onClick={() => setIsResetConfirmOpen(true)}
+                  >
+                    Reset All Demo Data
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save Button for form tabs */}
+          {activeTab !== 'demo' && (
+            <div className="pt-4 border-t border-stone-warm flex justify-end">
+              <Button type="submit" variant="primary">
+                Save Preferences
+              </Button>
+            </div>
+          )}
         </form>
       </Card>
 
@@ -526,6 +691,17 @@ export const SettingsPage = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Confirm Factory Reset Dialog */}
+      <ConfirmDialog
+        isOpen={isResetConfirmOpen}
+        onClose={() => setIsResetConfirmOpen(false)}
+        onConfirm={handleExecuteReset}
+        title="Restore Factory Demo Data"
+        message="Are you sure you want to reset all mock records? Any custom customers, subscriptions, invoices, or transactions you added will be restored to the initial hackathon demo set."
+        confirmLabel="Reset Everything"
+        variant="danger"
+      />
     </div>
   );
 };

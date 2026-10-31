@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ResponsiveContainer,
@@ -8,7 +7,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   CartesianGrid,
   PieChart,
   Pie,
@@ -21,12 +19,12 @@ import {
   AlertOctagon,
   Plus,
   ArrowRight,
-  TrendingUp,
   Receipt,
   Clock,
-  ExternalLink,
+  Sparkles,
+  Calendar,
   CheckCircle2,
-  Calendar
+  Users
 } from 'lucide-react';
 import { useMockData } from '../../contexts/MockDataContext';
 import { StatCard } from '../../components/ui/StatCard';
@@ -61,8 +59,20 @@ export const DashboardPage = () => {
     planName: plans[0]?.name || '',
     amount: plans[0]?.price || 499,
     billingCycle: 'Monthly',
-    paymentMethod: 'Credit Card (Default)'
+    paymentMethod: 'Credit Card (Visa •••• 4242)'
   });
+
+  // Dynamically filtered chart trends based on date range
+  const filteredRevenueTrends = useMemo(() => {
+    if (dateRange === 'Last 30 Days') {
+      return revenueTrends.slice(-2);
+    }
+    if (dateRange === 'Year to Date') {
+      return revenueTrends;
+    }
+    // Default Last 6 Months
+    return revenueTrends;
+  }, [dateRange, revenueTrends]);
 
   const handleCreateSubscription = (e) => {
     e.preventDefault();
@@ -113,7 +123,7 @@ export const DashboardPage = () => {
             >
               <option value="Last 30 Days">Last 30 Days</option>
               <option value="Last 6 Months">Last 6 Months</option>
-              <option value="Year to Date">Year to Date</option>
+              <option value="Year to Date">Year to Date (2026)</option>
             </select>
           </div>
 
@@ -135,7 +145,7 @@ export const DashboardPage = () => {
           delta={kpis.activeSubsDelta}
           icon={RefreshCw}
           accentColor="cherry"
-          subtitle="Customer retention: 98.2%"
+          subtitle="Portfolio retention: 98.2%"
         />
         <StatCard
           title="Monthly Recurring Rev."
@@ -152,7 +162,7 @@ export const DashboardPage = () => {
           isPositive={true}
           icon={CreditCard}
           accentColor="darkCherry"
-          subtitle="Net-30 invoiced balances"
+          subtitle="Net invoiced receivables"
         />
         <StatCard
           title="Overdue Invoices"
@@ -172,7 +182,7 @@ export const DashboardPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-warm/60">
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-champagne-gold">
-                Financial Trajectory
+                Financial Trajectory &bull; {dateRange}
               </span>
               <h3 className="font-display text-lg font-bold text-espresso">
                 Revenue Trends & Forecast
@@ -192,7 +202,7 @@ export const DashboardPage = () => {
 
           <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={filteredRevenueTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="currentRevGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#C41E3A" stopOpacity={0.25} />

@@ -1,32 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   FileText,
   Plus,
   Eye,
   CheckCircle2,
+  XCircle,
   Calendar,
   Send,
   Printer,
   DollarSign,
-  Download
+  ArrowRight,
+  Edit2,
+  Trash2,
+  Sparkles,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { useMockData } from '../../contexts/MockDataContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 export const QuotationsPage = () => {
-  const { quotations, customers, products, addQuotation, updateQuotationStatus } = useMockData();
+  const {
+    quotations,
+    customers,
+    products,
+    addQuotation,
+    updateQuotation,
+    updateQuotationStatus,
+    convertQuotationToSubscription,
+    deleteQuotation
+  } = useMockData();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedQuote, setSelectedQuote] = useState(null);
+  const [editingQuote, setEditingQuote] = useState(null);
+  const [deletingQuoteId, setDeletingQuoteId] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Form State
+  // Sorting and Pagination
+  const [sortField, setSortField] = useState('quotationNumber');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  // Form State for Create
   const [form, setForm] = useState({
     customerId: customers[0]?.id || '',
     customerName: customers[0]?.name || '',
@@ -38,14 +65,45 @@ export const QuotationsPage = () => {
     notes: '30-day payment term upon signature.'
   });
 
-  const filteredQuotes = quotations.filter((q) => {
-    const matchesSearch =
-      q.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.quotationNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || q.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const filteredAndSortedQuotes = useMemo(() => {
+    let result = quotations.filter((q) => {
+      const matchesSearch =
+        q.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.quotationNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === 'all' || q.status.toLowerCase() === statusFilter.toLowerCase();
+      return matchesSearch && matchesStatus;
+    });
+
+    result.sort((a, b) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+
+      if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || '').toLowerCase();
+        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+
+      return sortDirection === 'asc' ? (aVal || 0) - (bVal || 0) : (bVal || 0) - (aVal || 0);
+    });
+
+    return result;
+  }, [quotations, searchTerm, statusFilter, sortField, sortDirection]);
+
+  const paginatedQuotes = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAndSortedQuotes.slice(start, start + pageSize);
+  }, [filteredAndSortedQuotes, currentPage, pageSize]);
 
   const handleCreate = (e) => {
     e.preventDefault();
@@ -74,6 +132,22 @@ export const QuotationsPage = () => {
     });
 
     setIsCreateModalOpen(false);
+  };
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    if (!editingQuote) return;
+    const subtotal = editingQuote.lineItems?.reduce((acc, item) => acc + (item.total || 0), 0) || editingQuote.subtotal;
+    const tax = Math.round(subtotal * 0.08);
+    const total = subtotal + tax - (Number(editingQuote.discount) || 0);
+
+    updateQuotation(editingQuote.id, {
+      ...editingQuote,
+      subtotal,
+      tax,
+      total
+    });
+    setEditingQuote(null);
   };
 
   return (
@@ -106,16 +180,22 @@ export const QuotationsPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <SearchInput
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={(val) => {
+              setSearchTerm(val);
+              setCurrentPage(1);
+            }}
             placeholder="Search by quote number or client..."
             className="w-full md:max-w-md"
           />
 
-          <div className="flex items-center gap-1.5 p-1 bg-champagne/50 border border-stone-warm rounded-xl text-xs">
-            {['all', 'Draft', 'Sent', 'Accepted'].map((st) => (
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-champagne/50 border border-stone-warm rounded-xl text-xs">
+            {['all', 'Draft', 'Sent', 'Accepted', 'Rejected'].map((st) => (
               <button
                 key={st}
-                onClick={() => setStatusFilter(st)}
+                onClick={() => {
+                  setStatusFilter(st);
+                  setCurrentPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-lg capitalize font-medium transition-colors ${
                   statusFilter === st
                     ? 'bg-ivory text-cherry-dark font-bold shadow-sm'
@@ -131,7 +211,7 @@ export const QuotationsPage = () => {
 
       {/* Table Card */}
       <Card className="p-0 overflow-hidden">
-        {filteredQuotes.length === 0 ? (
+        {filteredAndSortedQuotes.length === 0 ? (
           <EmptyState
             title="No quotations found"
             description="No proposals match your search or filter settings."
@@ -139,64 +219,122 @@ export const QuotationsPage = () => {
             onAction={() => {
               setSearchTerm('');
               setStatusFilter('all');
+              setCurrentPage(1);
             }}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-champagne/30 border-b border-stone-warm text-espresso-muted uppercase font-semibold">
-                  <th className="py-3 px-4">Quotation #</th>
-                  <th className="py-3 px-4">Client</th>
-                  <th className="py-3 px-4">Issue Date</th>
-                  <th className="py-3 px-4">Valid Until</th>
-                  <th className="py-3 px-4 text-right">Subtotal</th>
-                  <th className="py-3 px-4 text-right">Net Total</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-warm/60">
-                {filteredQuotes.map((q) => (
-                  <tr key={q.id} className="hover:bg-champagne/20 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-cherry-dark">
-                      {q.quotationNumber}
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-espresso">
-                      {q.customerName}
-                    </td>
-                    <td className="py-3.5 px-4 text-espresso-muted">
-                      {q.issueDate}
-                    </td>
-                    <td className="py-3.5 px-4 text-stone-500">
-                      {q.validUntil}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-espresso-muted">
-                      ${q.subtotal?.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-espresso">
-                      ${q.total?.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <Badge status={q.status} />
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={Eye}
-                        onClick={() => {
-                          setSelectedQuote(q);
-                          setIsPreviewModalOpen(true);
-                        }}
-                      >
-                        Preview
-                      </Button>
-                    </td>
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-champagne/30 border-b border-stone-warm text-espresso-muted uppercase font-semibold">
+                    <th
+                      className="py-3 px-4 cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('quotationNumber')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Quotation #</span>
+                        {sortField === 'quotationNumber' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="py-3 px-4 cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('customerName')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Client</span>
+                        {sortField === 'customerName' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4">Issue Date</th>
+                    <th className="py-3 px-4">Valid Until</th>
+                    <th className="py-3 px-4 text-right">Subtotal</th>
+                    <th
+                      className="py-3 px-4 text-right cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('total')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Net Total</span>
+                        {sortField === 'total' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-stone-warm/60">
+                  {paginatedQuotes.map((q) => (
+                    <tr key={q.id} className="hover:bg-champagne/20 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-cherry-dark">
+                        {q.quotationNumber}
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-espresso">
+                        {q.customerName}
+                      </td>
+                      <td className="py-3.5 px-4 text-espresso-muted">
+                        {q.issueDate}
+                      </td>
+                      <td className="py-3.5 px-4 text-stone-500">
+                        {q.validUntil}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-espresso-muted">
+                        ${q.subtotal?.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-espresso">
+                        ${q.total?.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <Badge status={q.status} />
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedQuote(q);
+                              setIsPreviewModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-cherry hover:bg-champagne/40"
+                            title="Preview Quotation"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          {q.status === 'Draft' && (
+                            <button
+                              onClick={() => setEditingQuote({ ...q })}
+                              className="p-1.5 rounded-lg text-stone-500 hover:text-champagne-gold hover:bg-champagne/40"
+                              title="Edit Quotation"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setDeletingQuoteId(q.id)}
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-red-700 hover:bg-red-50"
+                            title="Delete Quotation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredAndSortedQuotes.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </Card>
@@ -211,7 +349,6 @@ export const QuotationsPage = () => {
           maxWidth="max-w-2xl"
         >
           <div className="space-y-6">
-            {/* Document Header */}
             <div className="p-6 rounded-2xl bg-ivory border border-stone-warm shadow-sm space-y-4">
               <div className="flex items-start justify-between pb-4 border-b border-stone-warm">
                 <div>
@@ -286,8 +423,8 @@ export const QuotationsPage = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-stone-warm">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-warm">
+              <div className="flex flex-wrap items-center gap-2">
                 {selectedQuote.status === 'Draft' && (
                   <Button
                     variant="primary"
@@ -298,20 +435,48 @@ export const QuotationsPage = () => {
                       setSelectedQuote({ ...selectedQuote, status: 'Sent' });
                     }}
                   >
-                    Mark as Sent to Client
+                    Mark Sent to Client
                   </Button>
                 )}
+
                 {selectedQuote.status === 'Sent' && (
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={CheckCircle2}
+                      onClick={() => {
+                        updateQuotationStatus(selectedQuote.id, 'Accepted');
+                        setSelectedQuote({ ...selectedQuote, status: 'Accepted' });
+                      }}
+                    >
+                      Client Accepted
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={XCircle}
+                      onClick={() => {
+                        updateQuotationStatus(selectedQuote.id, 'Rejected');
+                        setSelectedQuote({ ...selectedQuote, status: 'Rejected' });
+                      }}
+                    >
+                      Client Rejected
+                    </Button>
+                  </>
+                )}
+
+                {selectedQuote.status === 'Accepted' && (
                   <Button
                     variant="primary"
                     size="sm"
-                    icon={CheckCircle2}
+                    icon={Sparkles}
                     onClick={() => {
-                      updateQuotationStatus(selectedQuote.id, 'Accepted');
-                      setSelectedQuote({ ...selectedQuote, status: 'Accepted' });
+                      convertQuotationToSubscription(selectedQuote.id);
+                      setIsPreviewModalOpen(false);
                     }}
                   >
-                    Record Client Acceptance
+                    Convert to Active Subscription & Invoice
                   </Button>
                 )}
               </div>
@@ -326,6 +491,58 @@ export const QuotationsPage = () => {
               </Button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Edit Quotation Modal (for Drafts) */}
+      {editingQuote && (
+        <Modal
+          isOpen={Boolean(editingQuote)}
+          onClose={() => setEditingQuote(null)}
+          title={`Edit Quotation: ${editingQuote.quotationNumber}`}
+          subtitle={`Client: ${editingQuote.customerName}`}
+        >
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-espresso mb-1">Validity Date</label>
+                <input
+                  type="date"
+                  value={editingQuote.validUntil}
+                  onChange={(e) => setEditingQuote({ ...editingQuote, validUntil: e.target.value })}
+                  className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-espresso mb-1">Discount ($)</label>
+                <input
+                  type="number"
+                  value={editingQuote.discount}
+                  onChange={(e) => setEditingQuote({ ...editingQuote, discount: Number(e.target.value) })}
+                  className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry font-mono"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-espresso mb-1">Internal Notes</label>
+              <textarea
+                rows={2}
+                value={editingQuote.notes || ''}
+                onChange={(e) => setEditingQuote({ ...editingQuote, notes: e.target.value })}
+                className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-warm">
+              <Button type="button" variant="secondary" onClick={() => setEditingQuote(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Save Quotation
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
 
@@ -427,6 +644,22 @@ export const QuotationsPage = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingQuoteId)}
+        onClose={() => setDeletingQuoteId(null)}
+        onConfirm={() => {
+          if (deletingQuoteId) {
+            deleteQuotation(deletingQuoteId);
+            setDeletingQuoteId(null);
+          }
+        }}
+        title="Delete Quotation"
+        description="Are you sure you wish to delete this proposal? This action cannot be reversed."
+        confirmText="Confirm Delete"
+        danger={true}
+      />
     </div>
   );
 };

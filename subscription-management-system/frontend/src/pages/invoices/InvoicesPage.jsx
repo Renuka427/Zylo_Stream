@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Receipt,
   Plus,
@@ -8,25 +8,41 @@ import {
   Calendar,
   DollarSign,
   AlertCircle,
-  Clock
+  Clock,
+  Edit2,
+  Trash2,
+  Ban,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { useMockData } from '../../contexts/MockDataContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 export const InvoicesPage = () => {
-  const { invoices, customers, addInvoice, markInvoicePaid } = useMockData();
+  const { invoices, customers, addInvoice, updateInvoice, markInvoicePaid, voidInvoice, deleteInvoice } = useMockData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [deletingInvoiceId, setDeletingInvoiceId] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Form State
+  // Sorting and Pagination
+  const [sortField, setSortField] = useState('invoiceNumber');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  // Form State for Create
   const [form, setForm] = useState({
     customerId: customers[0]?.id || '',
     customerName: customers[0]?.name || '',
@@ -37,14 +53,45 @@ export const InvoicesPage = () => {
     discount: 0
   });
 
-  const filteredInvoices = invoices.filter((inv) => {
-    const matchesSearch =
-      inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.customerName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || inv.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const filteredAndSortedInvoices = useMemo(() => {
+    let result = invoices.filter((inv) => {
+      const matchesSearch =
+        inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === 'all' || inv.status.toLowerCase() === statusFilter.toLowerCase();
+      return matchesSearch && matchesStatus;
+    });
+
+    result.sort((a, b) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+
+      if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || '').toLowerCase();
+        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+
+      return sortDirection === 'asc' ? (aVal || 0) - (bVal || 0) : (bVal || 0) - (aVal || 0);
+    });
+
+    return result;
+  }, [invoices, searchTerm, statusFilter, sortField, sortDirection]);
+
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAndSortedInvoices.slice(start, start + pageSize);
+  }, [filteredAndSortedInvoices, currentPage, pageSize]);
 
   const handleCreate = (e) => {
     e.preventDefault();
@@ -72,6 +119,13 @@ export const InvoicesPage = () => {
     });
 
     setIsCreateModalOpen(false);
+  };
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    if (!editingInvoice) return;
+    updateInvoice(editingInvoice.id, editingInvoice);
+    setEditingInvoice(null);
   };
 
   return (
@@ -104,7 +158,10 @@ export const InvoicesPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <SearchInput
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={(val) => {
+              setSearchTerm(val);
+              setCurrentPage(1);
+            }}
             placeholder="Search by invoice number or customer..."
             className="w-full md:max-w-md"
           />
@@ -113,7 +170,10 @@ export const InvoicesPage = () => {
             {['all', 'Paid', 'Confirmed', 'Overdue', 'Draft'].map((st) => (
               <button
                 key={st}
-                onClick={() => setStatusFilter(st)}
+                onClick={() => {
+                  setStatusFilter(st);
+                  setCurrentPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-lg capitalize font-medium transition-colors ${
                   statusFilter === st
                     ? 'bg-ivory text-cherry-dark font-bold shadow-sm'
@@ -129,7 +189,7 @@ export const InvoicesPage = () => {
 
       {/* Invoices Table Card */}
       <Card className="p-0 overflow-hidden">
-        {filteredInvoices.length === 0 ? (
+        {filteredAndSortedInvoices.length === 0 ? (
           <EmptyState
             title="No invoices found"
             description="No billing statements match your filter criteria."
@@ -137,64 +197,142 @@ export const InvoicesPage = () => {
             onAction={() => {
               setSearchTerm('');
               setStatusFilter('all');
+              setCurrentPage(1);
             }}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-champagne/30 border-b border-stone-warm text-espresso-muted uppercase font-semibold">
-                  <th className="py-3 px-4">Invoice #</th>
-                  <th className="py-3 px-4">Customer</th>
-                  <th className="py-3 px-4">Issue Date</th>
-                  <th className="py-3 px-4">Due Date</th>
-                  <th className="py-3 px-4 text-right">Total</th>
-                  <th className="py-3 px-4 text-right">Outstanding</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-warm/60">
-                {filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-champagne/20 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-cherry-dark">
-                      {inv.invoiceNumber}
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-espresso">
-                      {inv.customerName}
-                    </td>
-                    <td className="py-3.5 px-4 text-espresso-muted">
-                      {inv.issueDate}
-                    </td>
-                    <td className="py-3.5 px-4 text-stone-500">
-                      {inv.dueDate}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-espresso">
-                      ${inv.total?.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-cherry">
-                      ${inv.outstandingAmount?.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <Badge status={inv.status} />
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={Eye}
-                        onClick={() => {
-                          setSelectedInvoice(inv);
-                          setIsPreviewModalOpen(true);
-                        }}
-                      >
-                        Review
-                      </Button>
-                    </td>
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-champagne/30 border-b border-stone-warm text-espresso-muted uppercase font-semibold">
+                    <th
+                      className="py-3 px-4 cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('invoiceNumber')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Invoice #</span>
+                        {sortField === 'invoiceNumber' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="py-3 px-4 cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('customerName')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Customer</span>
+                        {sortField === 'customerName' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4">Issue Date</th>
+                    <th
+                      className="py-3 px-4 cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('dueDate')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Due Date</span>
+                        {sortField === 'dueDate' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="py-3 px-4 text-right cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('total')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Total</span>
+                        {sortField === 'total' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="py-3 px-4 text-right cursor-pointer hover:text-cherry"
+                      onClick={() => handleSort('outstandingAmount')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Outstanding</span>
+                        {sortField === 'outstandingAmount' && (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-cherry" /> : <ArrowDown className="w-3 h-3 text-cherry" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-stone-warm/60">
+                  {paginatedInvoices.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-champagne/20 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-cherry-dark">
+                        {inv.invoiceNumber}
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-espresso">
+                        {inv.customerName}
+                      </td>
+                      <td className="py-3.5 px-4 text-espresso-muted">
+                        {inv.issueDate}
+                      </td>
+                      <td className="py-3.5 px-4 text-stone-500">
+                        {inv.dueDate}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-espresso">
+                        ${inv.total?.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-cherry">
+                        ${inv.outstandingAmount?.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <Badge status={inv.status} />
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedInvoice(inv);
+                              setIsPreviewModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-cherry hover:bg-champagne/40"
+                            title="Inspect Statement"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          {inv.status !== 'Paid' && (
+                            <button
+                              onClick={() => setEditingInvoice({ ...inv })}
+                              className="p-1.5 rounded-lg text-stone-500 hover:text-champagne-gold hover:bg-champagne/40"
+                              title="Edit Invoice"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setDeletingInvoiceId(inv.id)}
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-red-700 hover:bg-red-50"
+                            title="Delete Invoice"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredAndSortedInvoices.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </Card>
@@ -210,7 +348,6 @@ export const InvoicesPage = () => {
         >
           <div className="space-y-6">
             <div className="p-6 rounded-2xl bg-ivory border border-stone-warm shadow-sm space-y-4">
-              {/* Document Header */}
               <div className="flex items-start justify-between pb-4 border-b border-stone-warm">
                 <div>
                   <h3 className="font-display text-2xl font-black text-cherry-dark">INVOICE</h3>
@@ -289,30 +426,45 @@ export const InvoicesPage = () => {
             </div>
 
             {/* Footer Action Bar */}
-            <div className="flex items-center justify-between pt-2 border-t border-stone-warm">
-              {selectedInvoice.status !== 'Paid' ? (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  icon={CheckCircle}
-                  onClick={() => {
-                    markInvoicePaid(selectedInvoice.id);
-                    setSelectedInvoice({
-                      ...selectedInvoice,
-                      status: 'Paid',
-                      paidAmount: selectedInvoice.total,
-                      outstandingAmount: 0
-                    });
-                  }}
-                >
-                  Record Full Settlement
-                </Button>
-              ) : (
-                <div className="flex items-center gap-2 text-xs text-emerald-800 font-bold">
-                  <CheckCircle className="w-4 h-4" />
-                  Settled in Full via Reconciled Transaction
-                </div>
-              )}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-warm">
+              <div className="flex items-center gap-2">
+                {selectedInvoice.status !== 'Paid' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={CheckCircle}
+                    onClick={() => {
+                      markInvoicePaid(selectedInvoice.id);
+                      setSelectedInvoice({
+                        ...selectedInvoice,
+                        status: 'Paid',
+                        paidAmount: selectedInvoice.total,
+                        outstandingAmount: 0
+                      });
+                    }}
+                  >
+                    Record Full Settlement
+                  </Button>
+                )}
+
+                {selectedInvoice.status === 'Confirmed' && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={Ban}
+                    onClick={() => {
+                      voidInvoice(selectedInvoice.id);
+                      setSelectedInvoice({
+                        ...selectedInvoice,
+                        status: 'Draft',
+                        outstandingAmount: 0
+                      });
+                    }}
+                  >
+                    Mark as Void / Draft
+                  </Button>
+                )}
+              </div>
 
               <Button
                 variant="secondary"
@@ -324,6 +476,63 @@ export const InvoicesPage = () => {
               </Button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Edit Invoice Modal */}
+      {editingInvoice && (
+        <Modal
+          isOpen={Boolean(editingInvoice)}
+          onClose={() => setEditingInvoice(null)}
+          title={`Edit Invoice: ${editingInvoice.invoiceNumber}`}
+          subtitle={`Customer: ${editingInvoice.customerName}`}
+        >
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-espresso mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={editingInvoice.dueDate}
+                  onChange={(e) => setEditingInvoice({ ...editingInvoice, dueDate: e.target.value })}
+                  className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-espresso mb-1">Status</label>
+                <select
+                  value={editingInvoice.status}
+                  onChange={(e) => setEditingInvoice({ ...editingInvoice, status: e.target.value })}
+                  className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry"
+                >
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Overdue">Overdue</option>
+                  <option value="Draft">Draft</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-espresso mb-1">Discount ($)</label>
+              <input
+                type="number"
+                value={editingInvoice.discount}
+                onChange={(e) => setEditingInvoice({ ...editingInvoice, discount: Number(e.target.value) })}
+                className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry font-mono"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-warm">
+              <Button type="button" variant="secondary" onClick={() => setEditingInvoice(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Save Invoice
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
 
@@ -425,6 +634,22 @@ export const InvoicesPage = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingInvoiceId)}
+        onClose={() => setDeletingInvoiceId(null)}
+        onConfirm={() => {
+          if (deletingInvoiceId) {
+            deleteInvoice(deletingInvoiceId);
+            setDeletingInvoiceId(null);
+          }
+        }}
+        title="Remove Invoice Statement"
+        description="Are you sure you wish to delete this invoice statement from the ledger?"
+        confirmText="Confirm Deletion"
+        danger={true}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Package,
   Plus,
@@ -7,23 +7,34 @@ import {
   Layers,
   FileText,
   Eye,
+  Edit2,
+  Trash2,
   CheckCircle2,
-  TrendingUp
+  TrendingUp,
+  Percent
 } from 'lucide-react';
 import { useMockData } from '../../contexts/MockDataContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 export const ProductsPage = () => {
-  const { products, addProduct } = useMockData();
+  const { products, addProduct, updateProduct, deleteProduct } = useMockData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [deletingProductId, setDeletingProductId] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
 
   // Form State
   const [form, setForm] = useState({
@@ -36,17 +47,28 @@ export const ProductsPage = () => {
     notes: 'Primary recurring service module.'
   });
 
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => {
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [products, searchTerm]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
 
   const handleCreate = (e) => {
     e.preventDefault();
+    if (!form.name) return;
+
     addProduct({
       ...form,
-      variants: form.variants.split(',').map((v) => v.trim())
+      variants: typeof form.variants === 'string'
+        ? form.variants.split(',').map((v) => v.trim())
+        : form.variants
     });
     setIsCreateModalOpen(false);
     setForm({
@@ -58,6 +80,19 @@ export const ProductsPage = () => {
       variants: 'Standard, High-Throughput',
       notes: ''
     });
+  };
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    updateProduct(editingProduct.id, {
+      ...editingProduct,
+      variants: typeof editingProduct.variants === 'string'
+        ? editingProduct.variants.split(',').map((v) => v.trim())
+        : editingProduct.variants
+    });
+    setEditingProduct(null);
   };
 
   return (
@@ -89,7 +124,10 @@ export const ProductsPage = () => {
       <Card className="p-4">
         <SearchInput
           value={searchTerm}
-          onChange={setSearchTerm}
+          onChange={(val) => {
+            setSearchTerm(val);
+            setCurrentPage(1);
+          }}
           placeholder="Search products by title or category..."
           className="w-full md:max-w-md"
         />
@@ -101,85 +139,116 @@ export const ProductsPage = () => {
           title="No products found"
           description="Try adjusting your search query."
           actionLabel="Clear Search"
-          onAction={() => setSearchTerm('')}
+          onAction={() => {
+            setSearchTerm('');
+            setCurrentPage(1);
+          }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredProducts.map((prod) => {
-            const margin = Math.round(((prod.salesPrice - prod.costPrice) / prod.salesPrice) * 100);
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {paginatedProducts.map((prod) => {
+              const margin = Math.round(((prod.salesPrice - prod.costPrice) / (prod.salesPrice || 1)) * 100);
 
-            return (
-              <Card key={prod.id} hover className="flex flex-col justify-between space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-champagne text-cherry border border-stone-warm">
-                      {prod.category}
-                    </span>
-                    <Badge status={prod.status} />
-                  </div>
-
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-espresso">
-                      {prod.name}
-                    </h3>
-                    <p className="text-xs text-espresso-muted mt-1 line-clamp-2">
-                      {prod.notes || 'Enterprise subscription service module.'}
-                    </p>
-                  </div>
-
-                  {/* Financials Ribbon */}
-                  <div className="p-3 rounded-xl bg-champagne/40 border border-stone-warm flex items-center justify-between text-xs">
-                    <div>
-                      <span className="text-espresso-muted text-[10px] uppercase font-bold block">Sales Price</span>
-                      <span className="font-mono font-bold text-sm text-espresso">${prod.salesPrice}</span>
-                    </div>
-                    <div>
-                      <span className="text-espresso-muted text-[10px] uppercase font-bold block">Cost Price</span>
-                      <span className="font-mono text-espresso-muted">${prod.costPrice}</span>
-                    </div>
-                    <div>
-                      <span className="text-espresso-muted text-[10px] uppercase font-bold block">Gross Margin</span>
-                      <span className="font-bold text-emerald-800">{margin}%</span>
-                    </div>
-                  </div>
-
-                  {/* Variants */}
-                  {prod.variants && prod.variants.length > 0 && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-espresso-muted block">
-                        Variants
+              return (
+                <Card key={prod.id} hover className="flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-champagne text-cherry border border-stone-warm">
+                        {prod.category}
                       </span>
-                      <div className="flex flex-wrap gap-1">
-                        {prod.variants.map((v, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-0.5 rounded-md bg-ivory border border-stone-warm text-[11px] text-espresso"
-                          >
-                            {v}
-                          </span>
-                        ))}
+                      <Badge status={prod.status} />
+                    </div>
+
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-espresso">
+                        {prod.name}
+                      </h3>
+                      <p className="text-xs text-espresso-muted mt-1 line-clamp-2">
+                        {prod.notes || 'Enterprise subscription service module.'}
+                      </p>
+                    </div>
+
+                    {/* Financials Ribbon */}
+                    <div className="p-3 rounded-xl bg-champagne/40 border border-stone-warm flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-espresso-muted text-[10px] uppercase font-bold block">Sales Price</span>
+                        <span className="font-mono font-bold text-sm text-espresso">${prod.salesPrice}</span>
+                      </div>
+                      <div>
+                        <span className="text-espresso-muted text-[10px] uppercase font-bold block">Cost Price</span>
+                        <span className="font-mono text-espresso-muted">${prod.costPrice}</span>
+                      </div>
+                      <div>
+                        <span className="text-espresso-muted text-[10px] uppercase font-bold block">Margin</span>
+                        <span className="font-bold text-emerald-800">{margin}%</span>
                       </div>
                     </div>
-                  )}
-                </div>
 
-                <div className="pt-3 border-t border-stone-warm flex items-center justify-between">
-                  <span className="text-[11px] text-stone-500 font-mono">ID: {prod.id}</span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    icon={Eye}
-                    onClick={() => {
-                      setSelectedProduct(prod);
-                      setIsDetailModalOpen(true);
-                    }}
-                  >
-                    View Specs
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
+                    {/* Variants */}
+                    {prod.variants && prod.variants.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-espresso-muted block">
+                          Variants
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {prod.variants.map((v, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-0.5 rounded-md bg-ivory border border-stone-warm text-[11px] text-espresso"
+                            >
+                              {v}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-stone-warm flex items-center justify-between">
+                    <span className="text-[11px] text-stone-500 font-mono">ID: {prod.id}</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(prod);
+                          setIsDetailModalOpen(true);
+                        }}
+                        className="p-1.5 rounded-lg text-stone-500 hover:text-cherry hover:bg-champagne/40"
+                        title="View Specifications"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setEditingProduct({
+                          ...prod,
+                          variants: Array.isArray(prod.variants) ? prod.variants.join(', ') : prod.variants
+                        })}
+                        className="p-1.5 rounded-lg text-stone-500 hover:text-champagne-gold hover:bg-champagne/40"
+                        title="Edit Product"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingProductId(prod.id)}
+                        className="p-1.5 rounded-lg text-stone-500 hover:text-red-700 hover:bg-red-50"
+                        title="Delete Product"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredProducts.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 
@@ -226,6 +295,82 @@ export const ProductsPage = () => {
               </div>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Edit Product Modal */}
+      {editingProduct && (
+        <Modal
+          isOpen={Boolean(editingProduct)}
+          onClose={() => setEditingProduct(null)}
+          title={`Edit Product: ${editingProduct.name}`}
+          subtitle="Adjust catalog pricing and configuration variants."
+        >
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-espresso mb-1">Product Title</label>
+              <input
+                type="text"
+                required
+                value={editingProduct.name}
+                onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-espresso mb-1">Sales Price ($)</label>
+                <input
+                  type="number"
+                  required
+                  value={editingProduct.salesPrice}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, salesPrice: Number(e.target.value) })}
+                  className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-espresso mb-1">Cost Price ($)</label>
+                <input
+                  type="number"
+                  required
+                  value={editingProduct.costPrice}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, costPrice: Number(e.target.value) })}
+                  className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry font-mono"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-espresso mb-1">Variants (comma-separated)</label>
+              <input
+                type="text"
+                value={editingProduct.variants}
+                onChange={(e) => setEditingProduct({ ...editingProduct, variants: e.target.value })}
+                className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-espresso mb-1">Description / Notes</label>
+              <textarea
+                rows={2}
+                value={editingProduct.notes || ''}
+                onChange={(e) => setEditingProduct({ ...editingProduct, notes: e.target.value })}
+                className="w-full bg-ivory text-espresso text-sm p-2.5 rounded-xl border border-stone-warm focus:outline-none focus:border-cherry"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-warm">
+              <Button type="button" variant="secondary" onClick={() => setEditingProduct(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Save Product
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
 
@@ -332,6 +477,22 @@ export const ProductsPage = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingProductId)}
+        onClose={() => setDeletingProductId(null)}
+        onConfirm={() => {
+          if (deletingProductId) {
+            deleteProduct(deletingProductId);
+            setDeletingProductId(null);
+          }
+        }}
+        title="Remove Product"
+        description="Are you sure you wish to delete this product from the catalog? Existing subscriptions will remain intact."
+        confirmText="Confirm Deletion"
+        danger={true}
+      />
     </div>
   );
 };

@@ -11,7 +11,7 @@ export const LoginPage = () => {
   const { showToast } = useToast();
 
   const [email, setEmail] = useState('elena.vance@subscript-saas.com');
-  const [password, setPassword] = useState('••••••••••••');
+  const [password, setPassword] = useState('demo-pass-2026');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
