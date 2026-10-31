@@ -38,20 +38,22 @@ export const FinalCtaSection = () => {
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link to="/customer/dashboard" className="w-full sm:w-auto">
             <Button
-              variant="primary"
+              variant="gold"
               size="lg"
               icon={ArrowRight}
-              className="w-full sm:w-auto bg-ivory text-cherry-dark hover:bg-champagne hover:text-cherry font-bold shadow-xl border-none"
+              className="w-full sm:w-auto !text-cherry-dark font-extrabold text-base px-7 py-3 shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
-              Explore Platform
+              <span className="font-extrabold text-cherry-dark tracking-wide">
+                Explore Platform
+              </span>
             </Button>
           </Link>
 
           <Link to="/admin/login" className="w-full sm:w-auto">
             <Button
-              variant="secondary"
+              variant="outlineWhite"
               size="lg"
-              className="w-full sm:w-auto bg-white/10 border-white/20 text-ivory hover:bg-white/20 hover:text-white"
+              className="w-full sm:w-auto font-semibold text-base px-6 py-3 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               Administrator Access
             </Button>

@@ -22,7 +22,9 @@ export const Button = ({
     primary: 'bg-cherry hover:bg-cherry-hover text-ivory shadow-sm hover:shadow focus:ring-cherry',
     secondary: 'bg-ivory hover:bg-champagne-light text-espresso border border-stone-warm shadow-sm hover:border-champagne-gold/60 focus:ring-champagne-gold',
     dark: 'bg-cherry-dark hover:bg-cherry-darker text-ivory shadow-sm hover:shadow focus:ring-cherry-dark',
-    gold: 'bg-champagne-gold hover:bg-[#c9a765] text-espresso shadow-sm focus:ring-champagne-gold',
+    gold: 'bg-champagne-gold hover:bg-[#e2c78e] text-cherry-dark font-bold shadow-md hover:shadow-lg focus:ring-champagne-gold',
+    light: 'bg-ivory hover:bg-champagne text-cherry-dark font-bold shadow-md hover:shadow-lg focus:ring-champagne-gold',
+    outlineWhite: 'bg-white/10 border border-white/25 text-ivory hover:bg-white/20 hover:text-white focus:ring-white/50',
     ghost: 'bg-transparent hover:bg-champagne/40 text-espresso focus:ring-stone-warm',
     danger: 'bg-red-700 hover:bg-red-800 text-white shadow-sm focus:ring-red-600',
   };
