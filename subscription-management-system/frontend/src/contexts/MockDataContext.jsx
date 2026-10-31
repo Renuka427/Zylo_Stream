@@ -13,6 +13,12 @@ import {
   REVENUE_TRENDS_DATA,
   SUBSCRIPTION_STATUS_DISTRIBUTION
 } from '../mock/mockData';
+import {
+  INITIAL_CUSTOMER_SUBSCRIPTIONS,
+  INITIAL_CUSTOMER_INVOICES,
+  INITIAL_CUSTOMER_PAYMENTS,
+  INITIAL_CUSTOMER_NOTIFICATIONS
+} from '../mock/customerMockData';
 import { useToast } from './ToastContext';
 
 const STORAGE_KEY = 'SMS_MOCK_DATA_v1';
@@ -43,6 +49,20 @@ export const MockDataProvider = ({ children }) => {
   const [activityLog, setActivityLog] = useState(() => loadState('activityLog', INITIAL_ACTIVITY_LOG));
   const [settings, setSettings] = useState(() => loadState('settings', INITIAL_SETTINGS));
 
+  // Customer-scoped states (strictly isolated for customer_demo_001)
+  const [customerSubscriptions, setCustomerSubscriptions] = useState(() =>
+    loadState('customerSubscriptions', INITIAL_CUSTOMER_SUBSCRIPTIONS)
+  );
+  const [customerInvoices, setCustomerInvoices] = useState(() =>
+    loadState('customerInvoices', INITIAL_CUSTOMER_INVOICES)
+  );
+  const [customerPayments, setCustomerPayments] = useState(() =>
+    loadState('customerPayments', INITIAL_CUSTOMER_PAYMENTS)
+  );
+  const [customerNotifications, setCustomerNotifications] = useState(() =>
+    loadState('customerNotifications', INITIAL_CUSTOMER_NOTIFICATIONS)
+  );
+
   // Sync state changes to localStorage
   useEffect(() => {
     try {
@@ -56,10 +76,30 @@ export const MockDataProvider = ({ children }) => {
       localStorage.setItem(`${STORAGE_KEY}_discounts`, JSON.stringify(discounts));
       localStorage.setItem(`${STORAGE_KEY}_activityLog`, JSON.stringify(activityLog));
       localStorage.setItem(`${STORAGE_KEY}_settings`, JSON.stringify(settings));
+      // Sync customer-scoped state
+      localStorage.setItem(`${STORAGE_KEY}_customerSubscriptions`, JSON.stringify(customerSubscriptions));
+      localStorage.setItem(`${STORAGE_KEY}_customerInvoices`, JSON.stringify(customerInvoices));
+      localStorage.setItem(`${STORAGE_KEY}_customerPayments`, JSON.stringify(customerPayments));
+      localStorage.setItem(`${STORAGE_KEY}_customerNotifications`, JSON.stringify(customerNotifications));
     } catch (e) {
       console.warn('localStorage sync error:', e);
     }
-  }, [customers, products, plans, subscriptions, quotations, invoices, payments, discounts, activityLog, settings]);
+  }, [
+    customers,
+    products,
+    plans,
+    subscriptions,
+    quotations,
+    invoices,
+    payments,
+    discounts,
+    activityLog,
+    settings,
+    customerSubscriptions,
+    customerInvoices,
+    customerPayments,
+    customerNotifications
+  ]);
 
   const addActivity = (title, description, badge = 'System', type = 'info') => {
     const newAct = {
@@ -85,6 +125,10 @@ export const MockDataProvider = ({ children }) => {
     setDiscounts(INITIAL_DISCOUNTS);
     setActivityLog(INITIAL_ACTIVITY_LOG);
     setSettings(INITIAL_SETTINGS);
+    setCustomerSubscriptions(INITIAL_CUSTOMER_SUBSCRIPTIONS);
+    setCustomerInvoices(INITIAL_CUSTOMER_INVOICES);
+    setCustomerPayments(INITIAL_CUSTOMER_PAYMENTS);
+    setCustomerNotifications(INITIAL_CUSTOMER_NOTIFICATIONS);
     showToast('All demo records restored to factory defaults.', 'info');
   };
 
@@ -530,6 +574,107 @@ export const MockDataProvider = ({ children }) => {
     };
   }, [subscriptions, invoices]);
 
+  // ==========================================
+  // CUSTOMER-SPECIFIC HELPERS (ISOLATED SCOPE)
+  // ==========================================
+  const markCustomerNotificationRead = (id) => {
+    setCustomerNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const markAllCustomerNotificationsRead = () => {
+    setCustomerNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    showToast('All notifications marked as read', 'info');
+  };
+
+  const cancelCustomerSubscription = (id) => {
+    setCustomerSubscriptions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: 'canceled', autoRenew: false } : s))
+    );
+    showToast('Subscription canceled (Demo Simulation)', 'info');
+  };
+
+  const toggleCustomerAutoRenew = (id) => {
+    setCustomerSubscriptions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, autoRenew: !s.autoRenew } : s))
+    );
+    showToast('Auto-renew preference updated (Demo Simulation)', 'info');
+  };
+
+  const subscribeCustomerPlan = (plan, interval = 'monthly') => {
+    const subNumber = `SUB-ZYLO-${Math.floor(700 + Math.random() * 200)}`;
+    const isYearly = interval === 'yearly';
+    const finalAmount = isYearly ? (plan.yearlyPrice || plan.price * 10) : plan.price;
+
+    const newSub = {
+      id: `sub_c_${Date.now()}`,
+      subscriptionNumber: subNumber,
+      customerId: 'customer_demo_001',
+      customerName: 'Acme Creative Studio',
+      planId: plan.id,
+      planName: plan.name,
+      billingInterval: isYearly ? 'Yearly' : 'Monthly',
+      amount: finalAmount,
+      status: 'active',
+      startDate: new Date().toISOString().split('T')[0],
+      renewalDate: new Date(Date.now() + (isYearly ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      autoRenew: true,
+      paymentMethod: 'Visa •••• 4421',
+      features: plan.features || ['Standard access'],
+      notes: 'Subscribed via customer self-service portal'
+    };
+
+    setCustomerSubscriptions((prev) => [newSub, ...prev]);
+
+    // Create corresponding invoice
+    const newInv = {
+      id: `inv_c_${Date.now()}`,
+      invoiceNumber: `INV-2026-C${String(customerInvoices.length + 10).padStart(2, '0')}`,
+      customerId: 'customer_demo_001',
+      customerName: 'Acme Creative Studio',
+      subscriptionId: newSub.id,
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      subtotal: finalAmount,
+      tax: Math.round(finalAmount * 0.08),
+      discount: 0,
+      total: Math.round(finalAmount * 1.08),
+      paidAmount: Math.round(finalAmount * 1.08),
+      outstandingAmount: 0,
+      status: 'Paid',
+      paidDate: new Date().toISOString().split('T')[0],
+      paymentMethod: 'Visa •••• 4421',
+      lineItems: [
+        {
+          description: `${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`,
+          quantity: 1,
+          unitPrice: finalAmount,
+          total: finalAmount
+        }
+      ]
+    };
+    setCustomerInvoices((prev) => [newInv, ...prev]);
+
+    // Record completed transaction
+    const newPay = {
+      id: `pay_c_${Date.now()}`,
+      paymentNumber: `PAY-2026-C${String(customerPayments.length + 10).padStart(2, '0')}`,
+      customerId: 'customer_demo_001',
+      invoiceNumber: newInv.invoiceNumber,
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentMethod: 'Visa •••• 4421',
+      amount: newInv.total,
+      status: 'Completed',
+      transactionRef: `ch_3N${Math.random().toString(36).substring(2, 9)}`,
+      notes: 'Instant demonstration subscription charge'
+    };
+    setCustomerPayments((prev) => [newPay, ...prev]);
+
+    showToast(`Subscribed to ${plan.name} successfully!`, 'success');
+    return newSub;
+  };
+
   return (
     <MockDataContext.Provider
       value={{
@@ -547,6 +692,16 @@ export const MockDataProvider = ({ children }) => {
         statusDistribution: SUBSCRIPTION_STATUS_DISTRIBUTION,
         kpis,
         resetDemoData,
+        // Customer-Scoped Data & Actions
+        customerSubscriptions,
+        customerInvoices,
+        customerPayments,
+        customerNotifications,
+        markCustomerNotificationRead,
+        markAllCustomerNotificationsRead,
+        cancelCustomerSubscription,
+        toggleCustomerAutoRenew,
+        subscribeCustomerPlan,
         // Subscriptions
         addSubscription,
         updateSubscription,

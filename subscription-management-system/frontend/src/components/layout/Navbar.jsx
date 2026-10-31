@@ -26,8 +26,15 @@ export const Navbar = ({ onOpenMobileMenu }) => {
   const [selectedRange, setSelectedRange] = useState('October 2026');
 
   // Breadcrumb / title determination
+  const getSubPath = () => {
+    if (location.pathname.startsWith('/admin')) {
+      return location.pathname.split('/')[2] || 'dashboard';
+    }
+    return location.pathname.split('/')[1] || 'dashboard';
+  };
+
   const getPageTitle = () => {
-    const path = location.pathname.split('/')[1] || 'dashboard';
+    const path = getSubPath();
     switch (path) {
       case 'dashboard':
         return 'Executive Overview';
@@ -78,7 +85,7 @@ export const Navbar = ({ onOpenMobileMenu }) => {
             <span>ZYLO STREAM</span>
             <span>/</span>
             <span className="text-cherry font-bold">
-              {location.pathname.split('/')[1]?.toUpperCase() || 'DASHBOARD'}
+              {getSubPath().toUpperCase()}
             </span>
           </div>
           <h2 className="font-display text-lg md:text-xl font-bold text-espresso tracking-tight leading-tight">
@@ -174,7 +181,7 @@ export const Navbar = ({ onOpenMobileMenu }) => {
               <div className="space-y-1">
                 <button
                   onClick={() => {
-                    navigate('/settings');
+                    navigate('/admin/settings');
                     setShowProfileMenu(false);
                   }}
                   className="w-full text-left px-2.5 py-1.5 text-xs text-espresso rounded-lg hover:bg-champagne/40 transition-colors flex items-center gap-2"
@@ -185,31 +192,26 @@ export const Navbar = ({ onOpenMobileMenu }) => {
 
                 <button
                   onClick={() => {
-                    navigate('/auth/login');
+                    navigate('/customer/dashboard');
                     setShowProfileMenu(false);
                   }}
                   className="w-full text-left px-2.5 py-1.5 text-xs text-espresso rounded-lg hover:bg-champagne/40 transition-colors flex items-center gap-2"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-champagne-gold" />
-                  View Auth Demo Screens
+                  <Sparkles className="w-3.5 h-3.5 text-champagne-gold" />
+                  View Customer Portal
                 </button>
 
                 <button
                   onClick={() => {
-                    if (isAuthenticated) {
-                      logout();
-                      showToast('Logged out (Demo simulation)');
-                      navigate('/auth/login');
-                    } else {
-                      login('elena.vance@subscript-saas.com');
-                      showToast('Demo login restored');
-                    }
+                    logout();
+                    showToast('Administrator session ended', 'info');
+                    navigate('/admin/login');
                     setShowProfileMenu(false);
                   }}
                   className="w-full text-left px-2.5 py-1.5 text-xs text-cherry rounded-lg hover:bg-cherry-light transition-colors flex items-center gap-2 border-t border-stone-warm/50 mt-1"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  {isAuthenticated ? 'Simulate Logout' : 'Simulate Login'}
+                  Sign Out
                 </button>
               </div>
             </div>

@@ -66,13 +66,20 @@ export const LandingNavbar = () => {
             ))}
           </div>
 
-          {/* Right: Actions (Sign In, Get Started) */}
+          {/* Right: Actions (Sign In, Admin, Get Started) */}
           <div className="hidden sm:flex items-center gap-4">
             <Link
               to="/login"
               className="text-xs font-semibold text-espresso hover:text-cherry transition-colors"
             >
               Sign In
+            </Link>
+
+            <Link
+              to="/admin/login"
+              className="text-xs font-semibold text-espresso-muted hover:text-cherry transition-colors"
+            >
+              Admin Access
             </Link>
 
             <Link to="/register">
@@ -122,7 +129,12 @@ export const LandingNavbar = () => {
           <div className="pt-2 flex flex-col gap-2">
             <Link to="/login" onClick={() => setIsMobileOpen(false)}>
               <Button variant="secondary" className="w-full text-xs">
-                Sign In
+                Customer Sign In
+              </Button>
+            </Link>
+            <Link to="/admin/login" onClick={() => setIsMobileOpen(false)}>
+              <Button variant="outline" className="w-full text-xs">
+                Administrator Sign In
               </Button>
             </Link>
             <Link to="/register" onClick={() => setIsMobileOpen(false)}>

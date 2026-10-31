@@ -67,24 +67,30 @@ export const LandingFooter = () => {
             </h4>
             <ul className="space-y-2 text-espresso-muted">
               <li>
-                <Link to="/dashboard" className="inline-flex items-center gap-1 hover:text-cherry font-semibold transition-colors">
-                  <span>Interactive Live Dashboard</span>
+                <Link to="/customer/dashboard" className="inline-flex items-center gap-1 hover:text-cherry font-semibold transition-colors">
+                  <span>Customer Portal</span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-cherry" />
                 </Link>
               </li>
               <li>
+                <Link to="/admin/dashboard" className="inline-flex items-center gap-1 hover:text-cherry font-semibold transition-colors">
+                  <span>Executive Admin Dashboard</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-cherry-dark" />
+                </Link>
+              </li>
+              <li>
                 <Link to="/login" className="hover:text-cherry transition-colors">
-                  Sign In (1-Click Demo Available)
+                  Customer Sign In
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin/login" className="hover:text-cherry transition-colors">
+                  Administrator Sign In
                 </Link>
               </li>
               <li>
                 <Link to="/register" className="hover:text-cherry transition-colors">
                   Register Organization
-                </Link>
-              </li>
-              <li>
-                <Link to="/settings" className="hover:text-cherry transition-colors">
-                  System Preferences & Factory Reset
                 </Link>
               </li>
             </ul>

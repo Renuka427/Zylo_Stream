@@ -57,7 +57,9 @@ export const MobileDrawer = ({ isOpen, onClose }) => {
                   const Icon = item.icon;
                   const isActive =
                     location.pathname === item.path ||
-                    (item.path === '/dashboard' && location.pathname === '/');
+                    location.pathname === item.alias ||
+                    (item.path === '/admin/dashboard' &&
+                      (location.pathname === '/admin' || location.pathname === '/dashboard'));
 
                   return (
                     <NavLink
