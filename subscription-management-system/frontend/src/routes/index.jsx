@@ -3,6 +3,9 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 
+// Public Landing Page
+import { LandingPage } from '../pages/landing/LandingPage';
+
 // Feature Pages
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { SubscriptionsPage } from '../pages/subscriptions/SubscriptionsPage';
@@ -26,15 +29,63 @@ import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
 export const router = createBrowserRouter([
-  // Main Dashboard Routes
+  // 1. Public Landing Page at Root
   {
     path: '/',
-    element: <DashboardLayout />,
+    element: <LandingPage />
+  },
+
+  // 2. Direct Auth Routes (/login, /register, etc.)
+  {
+    element: <AuthLayout />,
     children: [
       {
-        index: true,
-        element: <Navigate to="/dashboard" replace />
+        path: 'login',
+        element: <LoginPage />
       },
+      {
+        path: 'register',
+        element: <RegisterPage />
+      },
+      {
+        path: 'forgot-password',
+        element: <ForgotPasswordPage />
+      },
+      {
+        path: 'reset-password',
+        element: <ResetPasswordPage />
+      }
+    ]
+  },
+
+  // 3. Namespaced Auth Routes (/auth/* for backwards compatibility)
+  {
+    path: '/auth',
+    element: <AuthLayout />,
+    children: [
+      {
+        path: 'login',
+        element: <LoginPage />
+      },
+      {
+        path: 'register',
+        element: <RegisterPage />
+      },
+      {
+        path: 'forgot-password',
+        element: <ForgotPasswordPage />
+      },
+      {
+        path: 'reset-password',
+        element: <ResetPasswordPage />
+      }
+    ]
+  },
+
+  // 4. Main Application / Dashboard Routes with Sidebar Layout
+  {
+    element: <DashboardLayout />,
+    children: [
       {
         path: 'dashboard',
         element: <DashboardPage />
@@ -82,31 +133,7 @@ export const router = createBrowserRouter([
     ]
   },
 
-  // Authentication Routes
-  {
-    path: '/auth',
-    element: <AuthLayout />,
-    children: [
-      {
-        path: 'login',
-        element: <LoginPage />
-      },
-      {
-        path: 'register',
-        element: <RegisterPage />
-      },
-      {
-        path: 'forgot-password',
-        element: <ForgotPasswordPage />
-      },
-      {
-        path: 'reset-password',
-        element: <ResetPasswordPage />
-      }
-    ]
-  },
-
-  // Catch-all 404
+  // 5. Catch-all 404
   {
     path: '*',
     element: <NotFoundPage />

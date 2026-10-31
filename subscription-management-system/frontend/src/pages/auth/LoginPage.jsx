@@ -41,7 +41,7 @@ export const LoginPage = () => {
           Account Access
         </span>
         <h2 className="font-display text-2xl font-bold text-espresso">
-          Welcome to Subscript
+          Welcome to Zylo Stream
         </h2>
         <p className="text-xs text-espresso-muted">
           Access your recurring revenue command center.

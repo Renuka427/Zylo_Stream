@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ZyloLogo } from '../brand/ZyloLogo';
 import {
   LayoutDashboard,
   RefreshCw,
@@ -45,24 +46,12 @@ export const Sidebar = ({ isCollapsed, onToggleCollapse }) => {
       <div>
         <div className="flex items-center justify-between h-20 px-4 border-b border-white/10">
           <NavLink to="/dashboard" className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 rounded-xl bg-ivory flex items-center justify-center text-cherry-dark font-serif font-black text-xl shadow-md shrink-0">
-              S
-            </div>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <span className="font-display text-xl font-bold tracking-tight text-ivory block leading-none">
-                  SUBSCRIPT
-                </span>
-                <span className="text-[9px] uppercase tracking-widest text-champagne-gold font-semibold block mt-1">
-                  Recurring Suite
-                </span>
-              </motion.div>
-            )}
+            <ZyloLogo
+              variant="light"
+              size="sm"
+              showWordmark={!isCollapsed}
+              showTagline={false}
+            />
           </NavLink>
 
           <button

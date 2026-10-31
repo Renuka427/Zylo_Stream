@@ -75,7 +75,7 @@ export const Navbar = ({ onOpenMobileMenu }) => {
 
         <div>
           <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-espresso-muted uppercase">
-            <span>Subscript</span>
+            <span>Zylo Stream</span>
             <span>/</span>
             <span className="text-cherry font-bold">{location.pathname.split('/')[1] || 'Overview'}</span>
           </div>

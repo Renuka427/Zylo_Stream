@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Sparkles, ArrowLeft } from 'lucide-react';
+import { ZyloLogo } from '../components/brand/ZyloLogo';
 
 export const AuthLayout = () => {
   return (
@@ -11,18 +12,13 @@ export const AuthLayout = () => {
 
       {/* Top Brand Header */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between z-10">
-        <Link to="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cherry-dark flex items-center justify-center text-ivory font-serif font-black text-xl shadow-md">
-            S
-          </div>
-          <div>
-            <span className="font-display text-xl font-bold tracking-tight text-cherry-dark block leading-none">
-              SUBSCRIPT
-            </span>
-            <span className="text-[9px] uppercase tracking-widest text-champagne-gold font-bold block mt-1">
-              Recurring Suite
-            </span>
-          </div>
+        <Link to="/" className="flex items-center gap-3">
+          <ZyloLogo
+            variant="dark"
+            size="md"
+            showWordmark={true}
+            showTagline={true}
+          />
         </Link>
 
         <Link
@@ -41,7 +37,7 @@ export const AuthLayout = () => {
 
       {/* Footer */}
       <footer className="max-w-6xl w-full mx-auto text-center text-xs text-espresso-muted z-10 pt-6 border-t border-stone-warm/50">
-        <p>Subscription Management System &copy; 2026. Editorial Luxury Design Identity.</p>
+        <p>Zylo Stream &copy; 2026. Your Subscription, On Autopilot.</p>
       </footer>
     </div>
   );
