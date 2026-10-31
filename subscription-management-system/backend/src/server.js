@@ -7,7 +7,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
-// Initialize MySQL pool and start server
+// Initialize PostgreSQL (Supabase) or local MySQL pool and start server
 async function startServer() {
   await initializeDatabase();
 
