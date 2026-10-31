@@ -1,72 +1,91 @@
 import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
 import { db } from '../config/database.js';
 import { sendError } from '../utils/apiResponse.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'zylo_stream_dev_secret_key_2026!';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAuth = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  : null;
 
-/**
- * Generates a signed JWT token for a verified user
- */
+/** Legacy token generator retained for local/legacy login routes. */
 export function generateToken(user) {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      role: user.role
-    },
-    JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
+  return jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+  });
 }
 
 /**
- * Authentication middleware: verifies Bearer token or HTTP-only cookie
+ * Accept either a legacy Zylo JWT or a verified Supabase access token.
+ * Supabase tokens are checked remotely with Auth getUser(token), never by
+ * decoding an unverified JWT payload.
  */
 export async function authenticate(req, res, next) {
   try {
-    let token = null;
+    const bearer = req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7).trim()
+      : null;
+    const token = bearer || req.cookies?.zylo_jwt_token;
+    if (!token) return sendError(res, 'Authentication required. Please sign in.', 401);
 
-    // 1. Check Authorization Header
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies && req.cookies.zylo_jwt_token) {
-      // 2. Check Cookie
-      token = req.cookies.zylo_jwt_token;
+    let identity = null;
+    let supabaseIdentity = false;
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      identity = { id: String(decoded.id), email: decoded.email, role: decoded.role };
+    } catch (legacyError) {
+      if (!supabaseAuth) {
+        return sendError(res, 'Supabase token validation is not configured on the API.', 503);
+      }
+      const { data, error } = await supabaseAuth.auth.getUser(token);
+      if (error || !data?.user) {
+        return sendError(res, 'Invalid or expired authentication token.', 401);
+      }
+      identity = { id: data.user.id, email: data.user.email, role: null };
+      supabaseIdentity = true;
     }
 
-    if (!token) {
-      return sendError(res, 'Authentication required. Please sign in.', 401);
+    if (supabaseIdentity) {
+      const profiles = await db.query(
+        'SELECT id, full_name, company_name, role FROM user_profiles WHERE id = ?',
+        [identity.id]
+      );
+      if (!profiles || profiles.length === 0) {
+        return sendError(res, 'Account profile not found. Please contact support.', 403);
+      }
+      const profile = profiles[0];
+      req.user = {
+        id: identity.id,
+        name: profile.full_name || identity.email?.split('@')[0] || 'Customer',
+        email: identity.email,
+        role: profile.role,
+        company: profile.company_name || null
+      };
+    } else {
+      const users = await db.query(
+        'SELECT id, name, email, role, company FROM users WHERE id = ?',
+        [identity.id]
+      );
+      if (!users || users.length === 0) {
+        return sendError(res, 'User session expired or account not found.', 401);
+      }
+      req.user = users[0];
     }
 
-    // 3. Verify JWT
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    // 4. Fetch User Record from Database
-    const users = await db.query('SELECT id, name, email, role, company FROM users WHERE id = ?', [decoded.id]);
-    if (!users || users.length === 0) {
-      return sendError(res, 'User session expired or account not found.', 401);
-    }
-
-    req.user = users[0];
-    next();
+    return next();
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return sendError(res, 'Token expired. Please sign in again.', 401);
-    }
-    return sendError(res, 'Invalid authentication token.', 401);
+    console.error('[Auth] Authentication middleware failed:', err.message);
+    return sendError(res, 'Unable to verify authentication.', 500);
   }
 }
 
-/**
- * Role-Based Access Control (RBAC) middleware:
- * Enforces server-side authorization for admin or customer roles.
- */
+/** Server-side role checks; only the persisted profile role is trusted. */
 export function requireRole(...allowedRoles) {
   return (req, res, next) => {
-    if (!req.user) {
-      return sendError(res, 'Authentication required.', 401);
-    }
-
+    if (!req.user) return sendError(res, 'Authentication required.', 401);
     if (!allowedRoles.includes(req.user.role)) {
       return sendError(
         res,
@@ -74,7 +93,6 @@ export function requireRole(...allowedRoles) {
         403
       );
     }
-
-    next();
+    return next();
   };
 }
