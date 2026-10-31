@@ -431,7 +431,8 @@ function toPostgresSql(sql) { let index = 0; return sql.replace(/\?/g, () => '$'
 
 /** Shared adapter: controllers keep `?` placeholders; PostgreSQL receives `$1`, `$2`, etc. */
 export const db = {
-  isMySql() { return isMySqlConnected; },
+  isMySql() { return isMySqlConnected && !process.env.DATABASE_URL; },
+  isPostgres() { return isMySqlConnected && Boolean(process.env.DATABASE_URL); },
   isConnected() { return isMySqlConnected; },
   getPool() { return pool; },
   getMemoryStore() { return memoryStore; },
