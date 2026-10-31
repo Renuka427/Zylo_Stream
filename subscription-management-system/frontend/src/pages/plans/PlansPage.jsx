@@ -122,7 +122,7 @@ export const PlansPage = () => {
         </div>
       </div>
 
-      {/* Pricing Plans Grid */}
+      {/* Pricing Plans in the Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPlans.map((plan) => {
           return (
