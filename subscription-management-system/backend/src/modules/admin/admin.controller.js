@@ -15,7 +15,7 @@ export async function getAdminOverviewStats(req, res) {
       JOIN users u ON s.user_id = u.id
     `);
     const invoices = await db.query('SELECT * FROM invoices');
-    const payments = await db.query('SELECT * FROM payments WHERE status = 'succeeded'');
+    const payments = await db.query("SELECT * FROM payments WHERE status = 'succeeded'");
     const logs = await db.query('SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 10');
 
     // Total Paid Revenue from actual database payment records
