@@ -26,6 +26,7 @@ export const LandingNavbar = () => {
   };
 
   const navLinks = [
+    { label: '3D Features', id: '3d-features' },
     { label: 'Features', id: 'features' },
     { label: 'How It Works', id: 'how-it-works' },
     { label: 'Solutions', id: 'solutions' },
@@ -70,8 +71,16 @@ export const LandingNavbar = () => {
           {/* Right: Actions */}
           <div className="hidden sm:flex items-center gap-3">
             <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ivory border border-stone-warm text-xs font-bold text-cherry-dark hover:border-cherry hover:bg-champagne-light transition-all shadow-sm"
+            >
+              <span>Executive Overview</span>
+              <ArrowRight className="w-3.5 h-3.5 text-cherry" />
+            </Link>
+
+            <Link
               to="/login"
-              className="px-4 py-2 text-xs font-semibold text-espresso hover:text-cherry transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold text-espresso hover:text-cherry transition-colors"
             >
               Sign In
             </Link>
@@ -80,7 +89,6 @@ export const LandingNavbar = () => {
               <Button
                 variant="primary"
                 size="sm"
-                icon={ArrowRight}
                 className="shadow-sm"
               >
                 Get Started
@@ -121,16 +129,23 @@ export const LandingNavbar = () => {
           </div>
 
           <div className="pt-2 flex flex-col gap-2">
-            <Link to="/login" onClick={() => setIsMobileOpen(false)}>
-              <Button variant="secondary" className="w-full text-xs">
-                Sign In to Account
+            <Link to="/dashboard" onClick={() => setIsMobileOpen(false)}>
+              <Button variant="primary" className="w-full text-xs shadow-luxury" icon={ArrowRight}>
+                Enter Executive Overview
               </Button>
             </Link>
-            <Link to="/register" onClick={() => setIsMobileOpen(false)}>
-              <Button variant="primary" className="w-full text-xs" icon={ArrowRight}>
-                Get Started Free
-              </Button>
-            </Link>
+            <div className="grid grid-cols-2 gap-2">
+              <Link to="/login" onClick={() => setIsMobileOpen(false)}>
+                <Button variant="secondary" className="w-full text-xs">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/register" onClick={() => setIsMobileOpen(false)}>
+                <Button variant="secondary" className="w-full text-xs">
+                  Register
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       )}

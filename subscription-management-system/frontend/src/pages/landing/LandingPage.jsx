@@ -3,6 +3,7 @@ import { LandingNavbar } from './components/LandingNavbar';
 import { HeroSection } from './components/HeroSection';
 import { ValueStrip } from './components/ValueStrip';
 import { FeaturesSection } from './components/FeaturesSection';
+import { ThreeDimensionShowcaseSection } from './components/ThreeDimensionShowcaseSection';
 import { ProductShowcase } from './components/ProductShowcase';
 import { HowItWorksSection } from './components/HowItWorksSection';
 import { SolutionsSection } from './components/SolutionsSection';
@@ -34,26 +35,29 @@ export const LandingPage = () => {
         {/* 4. Six Core Platform Features */}
         <FeaturesSection />
 
-        {/* 5. Signature Product Showcase (Browser Framed Dashboard Canvas) */}
+        {/* 5. Interactive 3D Feature Model & Portal to Executive Overview */}
+        <ThreeDimensionShowcaseSection />
+
+        {/* 6. Signature Product Showcase (Browser Framed Dashboard Canvas) */}
         <ProductShowcase />
 
-        {/* 6. How It Works (Organize -> Manage -> Understand) */}
+        {/* 7. How It Works (Organize -> Manage -> Understand) */}
         <HowItWorksSection />
 
-        {/* 7. Solutions for Teams Running on Recurring Revenue */}
+        {/* 8. Solutions for Teams Running on Recurring Revenue */}
         <SolutionsSection />
 
-        {/* 8. The Autopilot Philosophy (Connected Relational Cycle) */}
+        {/* 9. The Autopilot Philosophy (Connected Relational Cycle) */}
         <AutopilotFlowSection />
 
-        {/* 9. Frequently Asked Questions (Accordion) */}
+        {/* 10. Frequently Asked Questions (Accordion) */}
         <FaqSection />
 
-        {/* 10. Final Call to Action */}
+        {/* 11. Final Call to Action */}
         <FinalCtaSection />
       </main>
 
-      {/* 11. Footer */}
+      {/* 12. Footer */}
       <LandingFooter />
     </div>
   );
