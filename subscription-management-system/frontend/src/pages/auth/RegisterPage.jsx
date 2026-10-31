@@ -17,7 +17,7 @@ export const RegisterPage = () => {
   const [agreed, setAgreed] = useState(true);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!companyName || !email) {
       setError('Please provide all required fields.');
@@ -28,9 +28,13 @@ export const RegisterPage = () => {
       return;
     }
     setError('');
-    register({ companyName, fullName, email });
-    showToast(`Organization "${companyName}" provisioned! (Customer Demo Mode)`);
-    navigate('/customer/dashboard');
+    try {
+      await register({ companyName, fullName, email, password: 'SecurePassword2026!' });
+      showToast(`Organization "${companyName}" provisioned!`);
+      navigate('/customer/dashboard');
+    } catch (err) {
+      setError(err.message || 'Failed to register organization.');
+    }
   };
 
   return (

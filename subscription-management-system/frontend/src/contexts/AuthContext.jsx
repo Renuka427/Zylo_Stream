@@ -9,22 +9,22 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('zylo_auth_token_v2') || true);
 
   // Sync to authService
-  const login = (email, password, requestedRole = USER_ROLES.CUSTOMER) => {
-    const { user: loggedInUser } = authService.login(email, password, requestedRole);
+  const login = async (email, password, requestedRole = USER_ROLES.CUSTOMER) => {
+    const { user: loggedInUser } = await authService.login(email, password, requestedRole);
     setUser(loggedInUser);
     setIsAuthenticated(true);
     return loggedInUser;
   };
 
-  const loginWithGoogle = (role = USER_ROLES.CUSTOMER) => {
-    const { user: loggedInUser } = authService.loginWithGoogleDemo(role);
+  const loginWithGoogle = async (role = USER_ROLES.CUSTOMER) => {
+    const { user: loggedInUser } = await authService.loginWithGoogleDemo(role);
     setUser(loggedInUser);
     setIsAuthenticated(true);
     return loggedInUser;
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setIsAuthenticated(false);
     setUser(null);
   };
@@ -44,26 +44,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateCustomerProfile = (updates) => {
-    const updated = authService.updateProfile(updates);
+  const updateCustomerProfile = async (updates) => {
+    const updated = await authService.updateProfile(updates);
     setUser(updated);
     return updated;
   };
 
-  const register = (data) => {
-    // New registrants receive the customer role by default
-    const newCustomer = {
-      ...MOCK_CUSTOMER_USER,
-      id: `cust_${Date.now()}`,
-      name: data.fullName || data.name || 'New Customer',
-      email: data.email || 'customer@example.com',
-      company: data.companyName || 'My Organization',
-      role: USER_ROLES.CUSTOMER
-    };
+  const register = async (data) => {
+    const newCustomer = await authService.register(data);
     setUser(newCustomer);
     setIsAuthenticated(true);
-    localStorage.setItem('zylo_auth_user_v2', JSON.stringify(newCustomer));
-    localStorage.setItem('zylo_auth_token_v2', `token_${Date.now()}`);
     return newCustomer;
   };
 

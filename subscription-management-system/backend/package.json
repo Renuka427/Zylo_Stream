@@ -6,13 +6,22 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "db:init": "node src/scripts/initDb.js",
+    "admin:create": "node src/scripts/createAdmin.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.2",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.24.6",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

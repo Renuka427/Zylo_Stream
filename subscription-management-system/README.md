@@ -1,159 +1,151 @@
-# Subscription Management System
+# Zylo Stream: Your Subscription, On Autopilot.
 
-> Scalable, enterprise-grade SaaS subscription and recurring billing management platform built for hackathons and production evolution.
-
----
-
-## 1. Technology Stack
-
-- **Frontend**: React 18 + Vite, Tailwind CSS, Framer Motion, React Router, Recharts, Lucide Icons
-- **Backend**: Node.js + Express.js (Domain-driven modular architecture)
-- **Database**: PostgreSQL hosted on Supabase
-- **Authentication**: Supabase Auth (JWT verification middleware)
-- **Design System**: Cherry Red + Champagne
-- **Version Control**: Git & GitHub (Optimized for 4-developer concurrent workflows)
+Enterprise-grade SaaS subscription management platform featuring a public 3D landing page, dedicated customer portal, executive administration overview, and a Node.js + Express + MySQL 8 backend.
 
 ---
 
-## 2. Monorepo Directory Architecture
+## 1. System Architecture & Tech Stack
+
+- **Frontend**:
+  - React 18 + Vite
+  - Tailwind CSS (Cherry Red `#C41E3A` + Champagne `#F5E9D5` luxury theme)
+  - Three.js / Canvas 3D interactive hero
+  - Framer Motion animations
+  - React Router (Separate Customer `/customer/dashboard` and Admin `/admin/dashboard` routes)
+  - Recharts for financial and MRR analytics
+  - Lucide React icons
+- **Backend**:
+  - Node.js (ES Modules)
+  - Express.js with domain-driven modular routing
+  - MySQL 8 with `mysql2` parameterized queries & transactions
+  - Helmet & CORS security middleware
+  - Express Rate Limiting (brute-force protection on auth endpoints)
+  - BCrypt password hashing & JWT tokens via HTTP-only cookies
+  - Zod request validation
+- **Database (`zylo_stream`)**:
+  - `users`: ID, name, email, password_hash, google_id, role (`customer`, `admin`), company
+  - `subscription_plans`: ID, name, description, price (DECIMAL), billing_cycle, status, features
+  - `subscriptions`: ID, user_id, plan_id, start_date, next_billing_date, status
+  - `invoices`: ID, user_id, subscription_id, invoice_number, amount (DECIMAL), due_date, status
+  - `payments`: ID, user_id, invoice_id, amount (DECIMAL), payment_method, transaction_reference, status
+  - `activity_logs`: ID, user_id, action, description, created_at
+
+---
+
+## 2. Directory Structure
 
 ```
 subscription-management-system/
 ├── backend/                  # Express.js REST API service
 │   ├── src/
-│   │   ├── config/           # Database & Supabase clients
-│   │   ├── middleware/       # Auth, error handling, validation
-│   │   ├── modules/          # Domain feature modules (isolated for multi-dev)
-│   │   │   ├── users/
-│   │   │   ├── customers/
-│   │   │   ├── products/
-│   │   │   ├── plans/
-│   │   │   ├── subscriptions/
-│   │   │   ├── quotations/
-│   │   │   ├── invoices/
-│   │   │   ├── payments/
-│   │   │   ├── discounts/
-│   │   │   └── reports/
-│   │   ├── services/         # Billing, invoicing, renewals, emails
-│   │   ├── jobs/             # Scheduled recurring billing runners
-│   │   ├── utils/            # Standard response envelopes & logger
-│   │   ├── app.js            # Express app configuration & route registry
-│   │   └── server.js         # HTTP server entry point
+│   │   ├── config/database.js  # MySQL connection pool with resilient in-memory fallback
+│   │   ├── middleware/         # auth (JWT/RBAC), error, validate (Zod)
+│   │   ├── modules/            # auth, plans, customer, admin
+│   │   ├── scripts/            # initDb.js, createAdmin.js
+│   │   ├── app.js
+│   │   └── server.js
+│   ├── test_api_integration.js # 20-point automated integration test suite
 │   ├── .env.example
 │   └── package.json
 ├── frontend/                 # React 18 + Vite SPA
 │   ├── src/
-│   │   ├── assets/           # Media & brand assets
-│   │   ├── components/       # ui/, layout/, charts/, common/
-│   │   ├── layouts/          # Dashboard & authentication layouts
-│   │   ├── pages/            # Feature pages (customers, plans, invoices, etc.)
-│   │   ├── services/         # API client & Supabase client
-│   │   ├── hooks/            # Reusable React hooks
-│   │   ├── contexts/         # Shared state providers
-│   │   ├── routes/           # React Router route registry
-│   │   ├── utils/            # Frontend utility functions
-│   │   ├── constants/        # System constants & enum mappings
-│   │   ├── styles/           # Global styles and theme.css tokens
-│   │   ├── App.jsx           # Root scaffold validation component
-│   │   ├── main.jsx          # React DOM entry point
-│   │   └── index.css         # Tailwind & theme layer directives
+│   │   ├── components/       # 3D canvas, UI controls, charts
+│   │   ├── contexts/         # AuthContext, MockDataContext (live sync)
+│   │   ├── pages/
+│   │   │   ├── landing/      # Public 3D Landing Page (at '/')
+│   │   │   ├── auth/         # Customer Login, Admin Login, Registration
+│   │   │   ├── customer/     # Customer Dashboard & subscriptions
+│   │   │   └── admin/        # Executive Overview & platform management
+│   │   ├── services/api.js   # Centralized API client (Axios-compatible fetch)
+│   │   └── main.jsx
 │   ├── .env.example
-│   ├── tailwind.config.js
-│   ├── vite.config.js
-│   └── package.json
-├── database/                 # PostgreSQL migrations & baseline schema
-│   ├── migrations/           # Versioned forward SQL scripts
-│   ├── seeds/                # Demo datasets
-│   ├── schema.sql            # Aggregated schema baseline
+│   └── vite.config.js
+├── database/                 # MySQL 8 database assets
+│   ├── schema.sql            # Idempotent DDL schema for all 6 tables
+│   ├── seeds/seed.sql        # Demo accounts, plans, subscriptions, invoices
 │   └── README.md
-├── docs/                     # Architectural & API specifications
-│   ├── architecture.md
-│   ├── api-documentation.md
-│   └── database-design.md
-├── .env.example              # Root environment template
-├── .gitignore                # Global git ignore rules
-├── package.json              # Root workspace orchestrator scripts
-└── README.md
+├── docs/                     # Specifications
+│   └── api-documentation.md  # Complete REST API specification
+├── .env.example              # Monorepo environment configuration template
+└── package.json              # Monorepo runner scripts
 ```
 
 ---
 
-## 3. Design System: Cherry Red + Champagne
+## 3. Quick Start & Setup Guide
 
-| Token Name | Hex Code | Utility / Tailwind Class | Role |
-| :--- | :--- | :--- | :--- |
-| **Champagne background** | `#F5E9D5` | `bg-champagne` / `--color-champagne-bg` | Main application background |
-| **Ivory cards** | `#FFFAF2` | `bg-ivory` / `--color-ivory-card` | Content cards & elevated surfaces |
-| **Cherry red** | `#C41E3A` | `bg-cherry`, `text-cherry` / `--color-cherry-red` | Primary brand accent & CTAs |
-| **Dark cherry** | `#791D32` | `bg-cherry-dark`, `text-cherry-dark` | Hero headings & active states |
-| **Champagne gold** | `#D6B779` | `text-champagne-gold` / `--color-champagne-gold` | Secondary accents & badges |
-| **Espresso text** | `#292321` | `text-espresso` / `--color-espresso-text` | Primary body typography |
-| **Warm stone borders** | `#E5D4B8` | `border-stone-warm` / `--color-warm-stone` | Card & table divider borders |
-
-**Typography**:
-- Interface Text: **Inter**
-- Headings & Editorial Accents: **Playfair Display** (`font-display`)
-
----
-
-## 4. Getting Started
-
-### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm (v9 or higher)
-
-### Setup & Installation
-Run from the root directory:
+### Step 1: Install Dependencies
+From the repository root:
 ```bash
-# 1. Install root dependencies (concurrently)
-npm install
-
-# 2. Install all sub-project dependencies
 npm run install:all
 ```
 
-### Environment Configuration
-Copy environment files for each app:
+### Step 2: Configure Environment Variables
+Copy `.env.example` templates:
 ```bash
-# Backend
-cp backend/.env.example backend/.env
-
-# Frontend
+cp .env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
+Edit `backend/.env` with your MySQL credentials:
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=zylo_stream
+```
 
-### Running Locally
-To run both backend and frontend concurrently from root:
+### Step 3: Initialize Database (Schema & Seeds)
+Run the automated initialization script:
+```bash
+npm run db:init
+```
+*(Or execute `database/schema.sql` and `database/seeds/seed.sql` directly into MySQL).*
+
+### Step 4: Promote or Create an Administrator
+```bash
+npm run admin:create admin@zylostream.io admin-super-pass-2026 "Executive Admin"
+```
+
+### Step 5: Start Backend and Frontend
+To run both simultaneously:
 ```bash
 npm run dev
 ```
-
-Or run each service independently:
+Or independently:
 ```bash
-# Run backend only (runs on http://localhost:5000)
+# Terminal 1: Backend (http://localhost:5000)
 npm run dev:backend
 
-# Run frontend only (runs on http://localhost:5173)
+# Terminal 2: Frontend (http://localhost:5173)
 npm run dev:frontend
 ```
 
-### Healthcheck Verification
-- Backend Health: `http://localhost:5000/api/health`
-- Frontend UI: `http://localhost:5173`
+---
+
+## 4. Default Demonstration Accounts
+
+| Interface | Email | Password | Role |
+| :--- | :--- | :--- | :--- |
+| **Admin Portal** (`/admin/login`) | `admin@zylostream.io` | `admin-super-pass-2026` | `admin` |
+| **Customer Portal** (`/login`) | `eleanor.vance@acmestudio.io` | `demo-customer-2026` | `customer` |
 
 ---
 
-## 5. Team Workflow & Branching Strategy (4 Developers)
+## 5. Verification & Testing
 
-To prevent merge conflicts and maintain high velocity during the hackathon:
-
-1. **Feature Ownership by Module**:
-   - **Dev 1**: Subscriptions & Plans (`backend/src/modules/subscriptions`, `plans`, `frontend/src/pages/subscriptions`, `plans`)
-   - **Dev 2**: Customers & Quotations (`backend/src/modules/customers`, `quotations`, `frontend/src/pages/customers`, `quotations`)
-   - **Dev 3**: Invoices, Payments & Billing Jobs (`backend/src/modules/invoices`, `payments`, `jobs`, `frontend/src/pages/invoices`, `payments`)
-   - **Dev 4**: Auth, Reports & Dashboard UI (`backend/src/modules/users`, `reports`, `frontend/src/pages/dashboard`, `reports`, `components/charts`)
-
-2. **Branching Convention**:
-   - `main`: Protected production branch.
-   - `develop`: Shared integration branch.
-   - `feat/<module-name>`: e.g. `feat/subscription-lifecycle`, `feat/invoice-pdf`.
+Run the automated 20-point backend integration test suite:
+```bash
+npm run test:backend
+```
+Verifies:
+- Public catalog (`GET /api/plans`)
+- Customer registration with enforced `customer` role
+- Duplicate email rejection (409 Conflict)
+- Customer login & password validation
+- Admin login with server-side role check
+- RBAC protection: Customer cannot access `/api/admin/*` (403 Forbidden)
+- Customer ownership: Users only query their own subscriptions and invoices
+- Transactional subscription creation + invoice generation
+- Invoice payment settlement & transaction logging
+- Session logout

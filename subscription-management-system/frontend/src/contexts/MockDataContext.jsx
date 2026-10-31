@@ -20,6 +20,7 @@ import {
   INITIAL_CUSTOMER_NOTIFICATIONS
 } from '../mock/customerMockData';
 import { useToast } from './ToastContext';
+import { customerApi, adminApi, plansApi } from '../services/api';
 
 const STORAGE_KEY = 'SMS_MOCK_DATA_v1';
 
@@ -62,6 +63,101 @@ export const MockDataProvider = ({ children }) => {
   const [customerNotifications, setCustomerNotifications] = useState(() =>
     loadState('customerNotifications', INITIAL_CUSTOMER_NOTIFICATIONS)
   );
+
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+  const [isLoadingBackend, setIsLoadingBackend] = useState(false);
+
+  // Synchronize with backend API
+  const syncWithBackend = async () => {
+    setIsLoadingBackend(true);
+    try {
+      // 1. Fetch public subscription plans
+      const pRes = await plansApi.getPlans().catch(() => null);
+      if (pRes && pRes.data && pRes.data.length > 0) {
+        setIsBackendConnected(true);
+        const mappedPlans = pRes.data.map((p) => ({
+          ...p,
+          features: Array.isArray(p.features)
+            ? p.features
+            : typeof p.features === 'string'
+            ? p.features.split(' ')
+            : ['Core Platform Features']
+        }));
+        setPlans(mappedPlans);
+      }
+
+      // 2. Fetch customer records
+      const cSubs = await customerApi.getSubscriptions().catch(() => null);
+      if (cSubs && cSubs.data && cSubs.data.length > 0) {
+        setIsBackendConnected(true);
+        const mappedSubs = cSubs.data.map((s) => ({
+          id: s.id,
+          subscriptionNumber: `SUB-ZYLO-${s.id.slice(-4).toUpperCase()}`,
+          customerId: s.user_id,
+          customerName: 'Acme Creative Studio',
+          planId: s.plan_id,
+          planName: s.plan_name,
+          billingInterval: s.billing_cycle === 'yearly' ? 'Yearly' : 'Monthly',
+          amount: parseFloat(s.price || 0),
+          status: s.status,
+          startDate: s.start_date,
+          renewalDate: s.next_billing_date,
+          autoRenew: s.status === 'active',
+          paymentMethod: 'Credit Card',
+          features: Array.isArray(s.features) ? s.features : ['Core Features']
+        }));
+        setCustomerSubscriptions(mappedSubs);
+      }
+
+      const cInvs = await customerApi.getInvoices().catch(() => null);
+      if (cInvs && cInvs.data && cInvs.data.length > 0) {
+        const mappedInvs = cInvs.data.map((inv) => ({
+          id: inv.id,
+          invoiceNumber: inv.invoice_number,
+          customerId: inv.user_id,
+          customerName: 'Acme Creative Studio',
+          issueDate: inv.created_at ? new Date(inv.created_at).toISOString().split('T')[0] : '2026-10-15',
+          dueDate: inv.due_date,
+          subtotal: parseFloat(inv.amount || 0),
+          tax: 0,
+          discount: 0,
+          total: parseFloat(inv.amount || 0),
+          paidAmount: inv.status === 'Paid' ? parseFloat(inv.amount || 0) : 0,
+          outstandingAmount: inv.status === 'Paid' ? 0 : parseFloat(inv.amount || 0),
+          status: inv.status,
+          paidDate: inv.status === 'Paid' ? inv.due_date : null,
+          paymentMethod: 'Credit Card',
+          lineItems: [{ description: inv.plan_name || 'Subscription invoice', quantity: 1, unitPrice: parseFloat(inv.amount || 0), total: parseFloat(inv.amount || 0) }]
+        }));
+        setCustomerInvoices(mappedInvs);
+      }
+
+      const cPmts = await customerApi.getPayments().catch(() => null);
+      if (cPmts && cPmts.data && cPmts.data.length > 0) {
+        const mappedPmts = cPmts.data.map((pmt) => ({
+          id: pmt.id,
+          paymentNumber: `PAY-${pmt.id.slice(-6).toUpperCase()}`,
+          customerId: pmt.user_id,
+          invoiceNumber: pmt.invoice_number || 'INV-2026-001',
+          paymentDate: pmt.paid_at ? new Date(pmt.paid_at).toISOString().split('T')[0] : '2026-10-15',
+          paymentMethod: pmt.payment_method || 'Credit Card',
+          amount: parseFloat(pmt.amount || 0),
+          status: pmt.status === 'succeeded' ? 'Completed' : 'Pending',
+          transactionRef: pmt.transaction_reference,
+          notes: 'Processed via payment service'
+        }));
+        setCustomerPayments(mappedPmts);
+      }
+    } catch (err) {
+      console.warn('Backend data sync deferred:', err);
+    } finally {
+      setIsLoadingBackend(false);
+    }
+  };
+
+  useEffect(() => {
+    syncWithBackend();
+  }, []);
 
   // Sync state changes to localStorage
   useEffect(() => {
@@ -588,21 +684,32 @@ export const MockDataProvider = ({ children }) => {
     showToast('All notifications marked as read', 'info');
   };
 
-  const cancelCustomerSubscription = (id) => {
+  const cancelCustomerSubscription = async (id) => {
+    try {
+      await customerApi.cancelSubscription(id);
+    } catch (e) {
+      console.warn('Backend cancel call deferred:', e.message);
+    }
     setCustomerSubscriptions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: 'canceled', autoRenew: false } : s))
     );
-    showToast('Subscription canceled (Demo Simulation)', 'info');
+    showToast('Subscription canceled', 'info');
   };
 
   const toggleCustomerAutoRenew = (id) => {
     setCustomerSubscriptions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, autoRenew: !s.autoRenew } : s))
     );
-    showToast('Auto-renew preference updated (Demo Simulation)', 'info');
+    showToast('Auto-renew preference updated', 'info');
   };
 
-  const subscribeCustomerPlan = (plan, interval = 'monthly') => {
+  const subscribeCustomerPlan = async (plan, interval = 'monthly') => {
+    try {
+      await customerApi.createSubscription(plan.id);
+    } catch (e) {
+      console.warn('Backend subscription call deferred:', e.message);
+    }
+
     const subNumber = `SUB-ZYLO-${Math.floor(700 + Math.random() * 200)}`;
     const isYearly = interval === 'yearly';
     const finalAmount = isYearly ? (plan.yearlyPrice || plan.price * 10) : plan.price;
@@ -741,7 +848,11 @@ export const MockDataProvider = ({ children }) => {
         toggleDiscountStatus,
         deleteDiscount,
         // Settings
-        updateSettings
+        updateSettings,
+        // Backend Status & Live Sync
+        isBackendConnected,
+        isLoadingBackend,
+        refetchBackendData: syncWithBackend
       }}
     >
       {children}

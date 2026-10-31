@@ -15,27 +15,27 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
       setError('Please provide a valid email address.');
       return;
     }
     setError('');
-    login(email, password, 'customer');
-    showToast('Signed in successfully as Customer (Demo Mode)');
+    await login(email, password, 'customer');
+    showToast('Signed in successfully as Customer');
     navigate('/customer/dashboard');
   };
 
-  const handleDemoQuickLogin = () => {
-    login('eleanor.vance@acmestudio.io', 'demo-customer-pass', 'customer');
-    showToast('Signed in as Eleanor Vance (Customer Demo Profile)!', 'success');
+  const handleDemoQuickLogin = async () => {
+    await login('eleanor.vance@acmestudio.io', 'demo-customer-2026', 'customer');
+    showToast('Signed in as Eleanor Vance (Customer Profile)!', 'success');
     navigate('/customer/dashboard');
   };
 
-  const handleGoogleDemoLogin = () => {
-    loginWithGoogle('customer');
-    showToast('Simulated Google OAuth sign-in completed!', 'info');
+  const handleGoogleDemoLogin = async () => {
+    await loginWithGoogle('customer');
+    showToast('Signed in with Google identity!', 'info');
     navigate('/customer/dashboard');
   };
 

@@ -10,6 +10,9 @@
     "start:backend": "npm --prefix backend start",
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm --prefix frontend run build",
+    "db:init": "npm --prefix backend run db:init",
+    "admin:create": "npm --prefix backend run admin:create",
+    "test:backend": "node backend/test_api_integration.js",
     "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install"
   },
   "devDependencies": {

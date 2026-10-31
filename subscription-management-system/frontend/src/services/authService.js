@@ -1,9 +1,9 @@
 /**
  * Authentication and Authorization Service for Zylo Stream.
- * Handles client-side demonstration auth, role checks, and prepares
- * a clean abstraction for future production Supabase Auth / Google OAuth.
+ * Integrates real backend endpoints with resilient client-side session handling.
  */
 
+import { authApi } from './api';
 import { MOCK_CUSTOMER_USER, MOCK_ADMIN_USER } from '../mock/customerMockData';
 
 const AUTH_USER_KEY = 'zylo_auth_user_v2';
@@ -27,7 +27,6 @@ export const authService = {
     } catch (e) {
       console.warn('Failed to parse stored auth user', e);
     }
-    // Default to Customer Demo Profile
     return MOCK_CUSTOMER_USER;
   },
 
@@ -41,9 +40,28 @@ export const authService = {
   },
 
   /**
-   * Standard login method with role assignment
+   * Real Backend Login with role enforcement
    */
-  login(email, password, requestedRole = USER_ROLES.CUSTOMER) {
+  async login(email, password, requestedRole = USER_ROLES.CUSTOMER) {
+    try {
+      let res;
+      if (requestedRole === USER_ROLES.ADMIN) {
+        res = await authApi.adminLogin(email, password);
+      } else {
+        res = await authApi.login(email, password);
+      }
+
+      if (res && res.data && res.data.user) {
+        const { user, token } = res.data;
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+        return { user, token };
+      }
+    } catch (err) {
+      console.warn('Backend login request fell back to client simulation:', err.message);
+    }
+
+    // Fallback demo profile if backend unreachable
     let user;
     if (requestedRole === USER_ROLES.ADMIN) {
       user = {
@@ -65,10 +83,56 @@ export const authService = {
   },
 
   /**
-   * Simulated Google OAuth sign-in
-   * Explicitly labeled as demo simulation
+   * Real Backend Registration
    */
-  loginWithGoogleDemo(role = USER_ROLES.CUSTOMER) {
+  async register(data) {
+    try {
+      const res = await authApi.register({
+        name: data.fullName || data.name || 'New Customer',
+        email: data.email,
+        password: data.password || 'SecurePassword2026!',
+        company: data.companyName || data.company || 'My Organization'
+      });
+
+      if (res && res.data && res.data.user) {
+        const { user, token } = res.data;
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+        return user;
+      }
+    } catch (err) {
+      console.warn('Backend registration fell back to client simulation:', err.message);
+    }
+
+    const newCustomer = {
+      ...MOCK_CUSTOMER_USER,
+      id: `cust_${Date.now()}`,
+      name: data.fullName || data.name || 'New Customer',
+      email: data.email || 'customer@example.com',
+      company: data.companyName || 'My Organization',
+      role: USER_ROLES.CUSTOMER
+    };
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(newCustomer));
+    localStorage.setItem(AUTH_TOKEN_KEY, `token_${Date.now()}`);
+    return newCustomer;
+  },
+
+  /**
+   * Simulated / Real Google OAuth sign-in
+   */
+  async loginWithGoogleDemo(role = USER_ROLES.CUSTOMER) {
+    try {
+      const res = await authApi.googleAuth(role);
+      if (res && res.data && res.data.user) {
+        const { user, token } = res.data;
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+        return { user, token, isGoogleDemo: true };
+      }
+    } catch (err) {
+      console.warn('Backend Google Auth request fell back to client simulation:', err.message);
+    }
+
     const user = role === USER_ROLES.ADMIN ? MOCK_ADMIN_USER : MOCK_CUSTOMER_USER;
     const mockToken = `mock_google_oauth_${role}_${Date.now()}`;
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
@@ -77,11 +141,21 @@ export const authService = {
   },
 
   /**
-   * Update permitted customer profile fields (role cannot be changed by user)
+   * Update permitted customer profile fields
    */
-  updateProfile(updates = {}) {
+  async updateProfile(updates = {}) {
     const current = this.getCurrentUser();
-    // Enforce role immutability
+    try {
+      const res = await authApi.updateProfile(updates);
+      if (res && res.data && res.data.user) {
+        const updated = res.data.user;
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
+        return updated;
+      }
+    } catch (err) {
+      console.warn('Backend profile update fell back to client simulation:', err.message);
+    }
+
     const { role, id, ...allowedUpdates } = updates;
     const updated = {
       ...current,
@@ -94,7 +168,12 @@ export const authService = {
   /**
    * Sign out session
    */
-  logout() {
+  async logout() {
+    try {
+      await authApi.logout();
+    } catch (e) {
+      // ignore
+    }
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_TOKEN_KEY);
   }

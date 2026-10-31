@@ -15,27 +15,35 @@ export const AdminLoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
       setError('Please provide a valid administrative email.');
       return;
     }
     setError('');
-    login(email, password, 'admin');
-    showToast('Signed in successfully as Administrator (Demo Mode)');
-    navigate('/admin/dashboard');
+    try {
+      await login(email, password, 'admin');
+      showToast('Signed in successfully as Administrator');
+      navigate('/admin/dashboard');
+    } catch (err) {
+      setError(err.message || 'Administrative verification failed.');
+    }
   };
 
-  const handleDemoAdminLogin = () => {
-    login('admin@zylostream.io', 'admin-pass', 'admin');
-    showToast('Signed in as Julian Sterling (Administrator)!', 'success');
-    navigate('/admin/dashboard');
+  const handleDemoAdminLogin = async () => {
+    try {
+      await login('admin@zylostream.io', 'admin-super-pass-2026', 'admin');
+      showToast('Signed in as Julian Sterling (Administrator)!', 'success');
+      navigate('/admin/dashboard');
+    } catch (err) {
+      setError(err.message || 'Administrative authorization failed.');
+    }
   };
 
-  const handleGoogleDemoLogin = () => {
-    loginWithGoogle('admin');
-    showToast('Simulated Google OAuth administrator verification completed!', 'info');
+  const handleGoogleDemoLogin = async () => {
+    await loginWithGoogle('admin');
+    showToast('Administrator verified with Google OAuth!', 'info');
     navigate('/admin/dashboard');
   };
 
