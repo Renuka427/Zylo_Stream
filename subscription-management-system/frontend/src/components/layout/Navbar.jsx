@@ -74,10 +74,12 @@ export const Navbar = ({ onOpenMobileMenu }) => {
         </button>
 
         <div>
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-espresso-muted uppercase">
-            <span>Zylo Stream</span>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-espresso-muted uppercase font-mono">
+            <span>ZYLO STREAM</span>
             <span>/</span>
-            <span className="text-cherry font-bold">{location.pathname.split('/')[1] || 'Overview'}</span>
+            <span className="text-cherry font-bold">
+              {location.pathname.split('/')[1]?.toUpperCase() || 'DASHBOARD'}
+            </span>
           </div>
           <h2 className="font-display text-lg md:text-xl font-bold text-espresso tracking-tight leading-tight">
             {getPageTitle()}

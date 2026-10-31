@@ -1,40 +1,38 @@
 import React from 'react';
 import {
-  Users,
   RefreshCw,
+  Users,
   Package,
   Receipt,
   CreditCard,
   BarChart3,
-  ArrowRight,
-  ShieldCheck,
-  Tag
+  ArrowRight
 } from 'lucide-react';
-import { Card } from '../../../components/ui/Card';
+import { Link } from 'react-router-dom';
 
 export const FeaturesSection = () => {
   const features = [
     {
-      id: 'customers',
-      title: 'Customer Management',
-      description: 'Organize customer profiles, contact information, and related subscription records.',
-      detail: 'Keep customer lifecycle histories, MRR contributions, and billing addresses connected under one unified account view.',
-      icon: Users,
-      badge: 'Account Directory',
-      highlighted: true
-    },
-    {
       id: 'subscriptions',
       title: 'Subscription Management',
       description: 'Track active subscriptions, billing intervals, renewals, and cancellations.',
-      detail: 'Manage monthly and annual contracts with real-time status transitions and automated dunning policies.',
+      detail: 'Keep monthly and annual contracts organized with real-time lifecycle tracking and dunning grace periods.',
       icon: RefreshCw,
       badge: 'Core Ledger',
+      highlighted: true
+    },
+    {
+      id: 'customers',
+      title: 'Customer Management',
+      description: 'Organize customer profiles, contact information, and related subscription records.',
+      detail: 'Centralize client contact persons, company accounts, MRR contributions, and lifetime value histories.',
+      icon: Users,
+      badge: 'Account Directory',
       highlighted: false
     },
     {
       id: 'products-plans',
-      title: 'Product and Plan Management',
+      title: 'Products and Plans',
       description: 'Manage products, plan features, pricing, and billing intervals.',
       detail: 'Define tier schemes from Starter Sandboxes to Enterprise Bespoke tiers with granular feature bullet checklists.',
       icon: Package,
@@ -76,21 +74,21 @@ export const FeaturesSection = () => {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <span className="text-xs uppercase font-bold tracking-widest text-champagne-gold">
-            BUILT FOR THE WAY YOU WORK
+            CORE PLATFORM CAPABILITIES
           </span>
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-espresso tracking-tight leading-tight">
-            Everything connected.{' '}
+            Everything your subscription{' '}
             <br />
-            <span className="text-cherry font-normal italic">Nothing overlooked.</span>
+            <span className="text-cherry font-normal italic">business needs.</span>
           </h2>
           <p className="text-base sm:text-lg text-espresso-muted leading-relaxed">
-            Manage the subscription lifecycle from a single, organized workspace.
+            Manage the entire recurring billing lifecycle from a single, organized workspace.
           </p>
         </div>
 
-        {/* Editorial Feature Grid (Asymmetrical Layout) */}
+        {/* Editorial Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, idx) => {
+          {features.map((feature) => {
             const Icon = feature.icon;
             const isFeatured = feature.highlighted;
 
@@ -136,8 +134,10 @@ export const FeaturesSection = () => {
                 </div>
 
                 <div className="pt-4 mt-2 flex items-center text-xs font-semibold text-cherry opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                  <span>Explore workspace module</span>
-                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  <Link to="/dashboard" className="flex items-center gap-1 hover:underline">
+                    <span>View in Executive Overview</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  </Link>
                 </div>
               </div>
             );

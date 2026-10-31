@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Play, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { HeroDashboardPreview } from './HeroDashboardPreview';
 
@@ -53,41 +53,39 @@ export const HeroSection = () => {
 
             {/* Supporting Paragraph */}
             <p className="text-base sm:text-lg text-espresso-muted max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Take control of your subscription business with one connected workspace for customers, plans, renewals, quotations, invoices, and payments.
+              Bring customers, subscription plans, recurring revenue, quotations, invoices, and payments together in one organized workspace.
             </p>
 
-            {/* CTA Group */}
+            {/* CTA Group: Explore Dashboard & Discover Features */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-4">
-              <a href="#features" onClick={scrollToFeatures} className="w-full sm:w-auto">
+              <Link to="/dashboard" className="w-full sm:w-auto">
                 <Button
                   variant="primary"
                   size="lg"
+                  icon={ArrowRight}
                   className="w-full sm:w-auto shadow-luxury"
                 >
-                  Explore Zylo Stream
+                  Explore Dashboard
                 </Button>
-              </a>
+              </Link>
 
-              <Link to="/dashboard" className="w-full sm:w-auto">
+              <a href="#features" onClick={scrollToFeatures} className="w-full sm:w-auto">
                 <Button
                   variant="secondary"
                   size="lg"
-                  icon={Play}
                   className="w-full sm:w-auto shadow-sm"
                 >
-                  View Live Demo
+                  Discover Features
                 </Button>
-              </Link>
+              </a>
             </div>
 
             {/* Supporting Microcopy */}
             <div className="pt-2 flex items-center justify-center lg:justify-start gap-4 text-xs text-espresso-muted">
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 font-medium">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-800" />
-                Less manual tracking. More operational clarity.
+                Everything recurring. Everything under control.
               </span>
-              <span className="hidden sm:inline text-stone-300">•</span>
-              <span className="hidden sm:inline">100% Client Prototype</span>
             </div>
           </div>
 

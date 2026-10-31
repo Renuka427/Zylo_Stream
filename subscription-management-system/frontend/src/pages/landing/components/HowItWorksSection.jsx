@@ -1,99 +1,156 @@
 import React from 'react';
-import { FolderTree, RefreshCw, BarChart3, ArrowRight } from 'lucide-react';
+import {
+  Users,
+  Layers,
+  RefreshCw,
+  Receipt,
+  CreditCard,
+  BarChart3,
+  ArrowRight,
+  Sparkles
+} from 'lucide-react';
 
 export const HowItWorksSection = () => {
-  const steps = [
+  const workflowNodes = [
     {
-      num: '01',
-      tag: 'STEP 01: ORGANIZE',
-      title: 'Organize Accounts & Plans',
-      desc: 'Bring customers, products, and subscription plans into one structured workspace.',
-      detail: 'Define your product catalog, establish recurring pricing intervals, and enroll customer profiles.',
-      icon: FolderTree
+      id: 'customers',
+      step: '01',
+      label: 'Customers',
+      icon: Users,
+      desc: 'Centralize contact profiles, company details, and billing contacts.'
     },
     {
-      num: '02',
-      tag: 'STEP 02: MANAGE',
-      title: 'Manage the Active Lifecycle',
-      desc: 'Keep subscriptions, renewals, quotations, invoices, and payment records organized.',
-      detail: 'Issue customized estimates, convert quotations into active contracts, and log reconciled payments.',
-      icon: RefreshCw
+      id: 'plans',
+      step: '02',
+      label: 'Plans',
+      icon: Layers,
+      desc: 'Define pricing tiers, billing cycles, and included feature sets.'
     },
     {
-      num: '03',
-      tag: 'STEP 03: UNDERSTAND',
-      title: 'Understand Financial Health',
-      desc: 'Use clear summaries and business reports to understand your subscription operations.',
-      detail: 'Track MRR growth curves, churn cohorts, expansion trends, and export verified financial dossiers.',
-      icon: BarChart3
+      id: 'subscriptions',
+      step: '03',
+      label: 'Subscriptions',
+      icon: RefreshCw,
+      desc: 'Establish active contracts with automated renewal tracking.'
+    },
+    {
+      id: 'invoices',
+      step: '04',
+      label: 'Invoices',
+      icon: Receipt,
+      desc: 'Generate clear billing statements from subscriptions or quotations.'
+    },
+    {
+      id: 'payments',
+      step: '05',
+      label: 'Payments',
+      icon: CreditCard,
+      desc: 'Reconcile ACH, card, and wire settlements with reference logging.'
+    },
+    {
+      id: 'insights',
+      step: '06',
+      label: 'Insights',
+      icon: BarChart3,
+      desc: 'Understand MRR velocity, customer retention, and net churn cohorts.'
     }
   ];
 
   return (
     <section id="how-it-works" className="py-20 md:py-28 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <span className="text-xs uppercase font-bold tracking-widest text-champagne-gold">
-            OPERATIONAL METHODOLOGY
+            RELATIONAL LIFECYCLE
           </span>
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-espresso tracking-tight leading-tight">
-            From scattered tasks{' '}
-            <br className="hidden sm:inline" />
-            <span className="text-cherry font-normal italic">to a smoother flow.</span>
+            One workspace.{' '}
+            <br />
+            <span className="text-cherry font-normal italic">A clearer workflow.</span>
           </h2>
           <p className="text-base sm:text-lg text-espresso-muted leading-relaxed">
-            A cohesive three-stage operational loop designed to bring clarity to recurring billing.
+            Zylo Stream connects each operational stage into a single continuous sequence, keeping team members aligned without manual data re-entry.
           </p>
         </div>
 
-        {/* 3 Steps: Horizontal on Desktop, Vertical on Mobile */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-          {/* Connector Line on Desktop */}
-          <div className="hidden lg:block absolute top-1/4 left-1/6 right-1/6 h-[2px] bg-gradient-to-r from-stone-warm via-champagne-gold/60 to-stone-warm -z-0" />
+        {/* Clean Visual Flow Diagram */}
+        <div className="relative rounded-3xl bg-ivory border border-stone-warm shadow-luxury p-6 sm:p-10 space-y-8">
+          <div className="text-center">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-espresso-muted">
+              Standardized Operational Sequence
+            </span>
+          </div>
 
-          {steps.map((step, idx) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={step.num}
-                className="relative z-10 bg-ivory rounded-3xl p-7 border border-stone-warm shadow-luxury hover:border-cherry/50 transition-all duration-300 flex flex-col justify-between space-y-6"
-              >
-                <div className="space-y-4">
-                  {/* Step Number Badge & Icon */}
-                  <div className="flex items-center justify-between">
-                    <span className="font-display text-3xl font-black text-cherry-dark/40 font-mono">
-                      {step.num}
+          {/* Desktop Flow (6 nodes in grid with connecting arrows) */}
+          <div className="hidden lg:grid grid-cols-6 gap-3 relative items-stretch">
+            {workflowNodes.map((node, index) => {
+              const Icon = node.icon;
+              return (
+                <div
+                  key={node.id}
+                  className="relative flex flex-col justify-between p-4 rounded-2xl bg-champagne-light border border-stone-warm text-center group hover:border-cherry hover:bg-champagne transition-all duration-200"
+                >
+                  {/* Arrow to Next Node */}
+                  {index < workflowNodes.length - 1 && (
+                    <div className="absolute top-8 -right-3 z-20 w-6 h-6 rounded-full bg-ivory border border-stone-warm flex items-center justify-center text-champagne-gold shadow-sm">
+                      <ArrowRight className="w-3.5 h-3.5 text-cherry" />
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <span className="font-mono text-[10px] font-bold text-cherry-dark bg-champagne px-2 py-0.5 rounded-full inline-block">
+                      {node.step}
                     </span>
-                    <div className="w-12 h-12 rounded-2xl bg-champagne-light border border-stone-warm flex items-center justify-center text-cherry shadow-sm">
+
+                    <div className="w-12 h-12 mx-auto rounded-xl bg-ivory border border-stone-warm flex items-center justify-center text-cherry shadow-sm group-hover:scale-105 transition-transform">
                       <Icon className="w-5 h-5" />
                     </div>
+
+                    <h4 className="font-display text-sm font-bold text-espresso">
+                      {node.label}
+                    </h4>
+
+                    <p className="text-[11px] text-espresso-muted leading-snug">
+                      {node.desc}
+                    </p>
                   </div>
 
+                  <span className="text-[9px] uppercase font-bold text-stone-400 mt-3 pt-2 border-t border-stone-warm/50 block">
+                    Connected
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Sequence */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-3.5">
+            {workflowNodes.map((node) => {
+              const Icon = node.icon;
+              return (
+                <div
+                  key={node.id}
+                  className="p-4 rounded-xl bg-champagne-light border border-stone-warm flex items-start gap-3.5"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-ivory border border-stone-warm flex items-center justify-center text-cherry shrink-0">
+                    <Icon className="w-5 h-5" />
+                  </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-champagne-gold block">
-                      {step.tag}
-                    </span>
-                    <h3 className="font-display text-xl font-bold text-espresso mt-1">
-                      {step.title}
-                    </h3>
+                    <span className="text-[10px] font-mono font-bold text-cherry-dark">STEP {node.step}</span>
+                    <h4 className="font-display text-sm font-bold text-espresso">{node.label}</h4>
+                    <p className="text-[11px] text-espresso-muted mt-0.5 leading-snug">{node.desc}</p>
                   </div>
-
-                  <p className="text-sm font-semibold text-espresso leading-relaxed">
-                    {step.desc}
-                  </p>
-
-                  <p className="text-xs text-espresso-muted leading-relaxed pt-2 border-t border-stone-warm/50">
-                    {step.detail}
-                  </p>
                 </div>
+              );
+            })}
+          </div>
 
-                <div className="pt-2 text-[11px] font-bold text-cherry-dark flex items-center gap-1.5 uppercase tracking-wider">
-                  <span>Phase {step.num} Ready</span>
-                </div>
-              </div>
-            );
-          })}
+          {/* Clarity Disclaimer Note */}
+          <div className="pt-4 border-t border-stone-warm/60 flex flex-col sm:flex-row items-center justify-between text-xs text-espresso-muted gap-2 text-center sm:text-left">
+            <span>Organizational workflows connect related records across the client lifecycle.</span>
+            <span className="font-bold text-cherry-dark">Your Subscription, On Autopilot.</span>
+          </div>
         </div>
       </div>
     </section>
