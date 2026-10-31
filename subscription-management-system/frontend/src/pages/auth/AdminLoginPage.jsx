@@ -31,15 +31,6 @@ export const AdminLoginPage = () => {
     }
   };
 
-  const handleDemoAdminLogin = async () => {
-    try {
-      await login('admin@zylostream.io', 'admin-super-pass-2026', 'admin');
-      showToast('Signed in as Julian Sterling (Administrator)!', 'success');
-      navigate('/admin/dashboard');
-    } catch (err) {
-      setError(err.message || 'Administrative authorization failed.');
-    }
-  };
 
   const handleGoogleDemoLogin = async () => {
     await loginWithGoogle('admin');
@@ -161,18 +152,6 @@ export const AdminLoginPage = () => {
         </Button>
       </form>
 
-      {/* One-Click Quick Demo Login */}
-      <div className="pt-2 border-t border-stone-warm space-y-2">
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full text-xs"
-          icon={ArrowRight}
-          onClick={handleDemoAdminLogin}
-        >
-          Instant 1-Click Administrator Demo (Julian Sterling)
-        </Button>
-      </div>
 
       {/* Links back to public home & customer portal */}
       <div className="pt-2 space-y-3 text-center text-xs text-espresso-muted border-t border-stone-warm/50">

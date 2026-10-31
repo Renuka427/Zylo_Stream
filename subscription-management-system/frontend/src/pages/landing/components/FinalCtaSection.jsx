@@ -35,28 +35,20 @@ export const FinalCtaSection = () => {
           Bring your customers, subscriptions, and billing workflows into one clearer view with Zylo Stream.
         </p>
 
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/customer/dashboard" className="w-full sm:w-auto">
-            <Button
-              variant="gold"
-              size="lg"
-              icon={ArrowRight}
-              className="w-full sm:w-auto !text-cherry-dark font-extrabold text-base px-7 py-3 shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="font-extrabold text-cherry-dark tracking-wide">
-                Explore Platform
-              </span>
-            </Button>
-          </Link>
-
+        <div className="pt-2 flex items-center justify-center">
           <Link to="/admin/login" className="w-full sm:w-auto">
-            <Button
-              variant="outlineWhite"
-              size="lg"
-              className="w-full sm:w-auto font-semibold text-base px-6 py-3 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
+            <button
+              type="button"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl font-bold text-base transition-all duration-200 shadow-luxury hover:scale-[1.02] active:scale-[0.98] focus:outline-none"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                color: '#FFFAF2',
+                border: '1.5px solid rgba(214, 183, 121, 0.6)'
+              }}
             >
-              Administrator Access
-            </Button>
+              <span>Administrator Access</span>
+              <ArrowRight className="w-4 h-4 text-champagne-gold shrink-0" />
+            </button>
           </Link>
         </div>
 
