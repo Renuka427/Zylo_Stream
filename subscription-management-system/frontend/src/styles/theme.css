@@ -1,25 +1,32 @@
 /**
  * Subscription Management System - Cherry Red + Champagne Theme
+ * Distinctive Editorial-Luxury SaaS Design System
  */
 
 :root {
-  /* Color Palette Tokens */
+  /* Core Palette Tokens */
   --color-champagne-bg: #F5E9D5;
   --color-ivory-card: #FFFAF2;
+  --color-ivory-surface: #FFFDF9;
   --color-cherry-red: #C41E3A;
+  --color-cherry-hover: #A91730;
   --color-dark-cherry: #791D32;
+  --color-darker-cherry: #5E1425;
   --color-champagne-gold: #D6B779;
   --color-espresso-text: #292321;
+  --color-secondary-text: #82766F;
   --color-warm-stone: #E5D4B8;
+  --color-subtle-stone: #EDE2D0;
 
-  /* Typography Tokens */
+  /* Typography */
   --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-playfair: 'Playfair Display', Georgia, serif;
 
   /* Elevation Shadows */
   --shadow-subtle: 0 1px 3px 0 rgba(41, 35, 33, 0.05), 0 1px 2px -1px rgba(41, 35, 33, 0.05);
-  --shadow-card: 0 4px 6px -1px rgba(41, 35, 33, 0.07), 0 2px 4px -2px rgba(41, 35, 33, 0.05);
-  --shadow-elevated: 0 10px 15px -3px rgba(41, 35, 33, 0.08), 0 4px 6px -4px rgba(41, 35, 33, 0.04);
+  --shadow-card: 0 2px 8px 0 rgba(41, 35, 33, 0.04);
+  --shadow-luxury: 0 4px 20px -2px rgba(41, 35, 33, 0.06), 0 2px 6px -1px rgba(41, 35, 33, 0.04);
+  --shadow-elevated: 0 12px 30px -4px rgba(41, 35, 33, 0.08), 0 4px 12px -2px rgba(41, 35, 33, 0.04);
 }
 
 /* Base resets & typography */
@@ -27,6 +34,8 @@ body {
   background-color: var(--color-champagne-bg);
   color: var(--color-espresso-text);
   font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Headings with Playfair Display */
@@ -39,4 +48,29 @@ body {
   background-color: var(--color-ivory-card);
   border: 1px solid var(--color-warm-stone);
   box-shadow: var(--shadow-card);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(229, 212, 184, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D6B779;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C41E3A;
+}
+
+/* Selection */
+::selection {
+  background-color: #C41E3A;
+  color: #FFFAF2;
 }
