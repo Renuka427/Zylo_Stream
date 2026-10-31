@@ -233,9 +233,34 @@ const memoryStore = {
 };
 
 /**
- * Initialize MySQL Connection Pool and Auto-Provision Database if MySQL is running
+ * Initialize the application database.
+ * Supabase PostgreSQL is preferred when DATABASE_URL is configured.
+ * MySQL remains available for local/backwards-compatible development.
  */
 export async function initializeDatabase() {
+  if (process.env.DATABASE_URL) {
+    try {
+      const { Pool } = await import('pg');
+      pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: Number(process.env.DB_POOL_MAX || 10),
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+        ssl: process.env.DATABASE_SSL === 'disable' ? false : { rejectUnauthorized: false }
+      });
+      await pool.query('SELECT 1');
+      isMySqlConnected = true;
+      console.log('[Database] Connected successfully to Supabase PostgreSQL.');
+      return;
+    } catch (err) {
+      isMySqlConnected = false;
+      if (pool) await pool.end().catch(() => {});
+      pool = null;
+      console.error('[Database] Supabase PostgreSQL connection failed:', err.message);
+      throw err;
+    }
+  }
+
   const dbHost = process.env.DB_HOST || 'localhost';
   const dbPort = parseInt(process.env.DB_PORT || '3306', 10);
   const dbUser = process.env.DB_USER || 'root';
@@ -243,47 +268,24 @@ export async function initializeDatabase() {
   const dbName = process.env.DB_NAME || 'zylo_stream';
 
   try {
-    // 1. Try to connect to MySQL server root to ensure database exists
-    const adminConn = await mysql.createConnection({
-      host: dbHost,
-      port: dbPort,
-      user: dbUser,
-      password: dbPassword
-    });
-
+    const adminConn = await mysql.createConnection({ host: dbHost, port: dbPort, user: dbUser, password: dbPassword });
     await adminConn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
     await adminConn.end();
-
-    // 2. Create the real application pool connected to zylo_stream
     pool = mysql.createPool({
-      host: dbHost,
-      port: dbPort,
-      user: dbUser,
-      password: dbPassword,
-      database: dbName,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-      decimalNumbers: true
+      host: dbHost, port: dbPort, user: dbUser, password: dbPassword, database: dbName,
+      waitForConnections: true, connectionLimit: 10, queueLimit: 0, decimalNumbers: true
     });
-
-    // Test pool connection
     const testConn = await pool.getConnection();
     testConn.release();
-
     isMySqlConnected = true;
     console.log(`[Database] Connected successfully to MySQL 8 database "${dbName}" at ${dbHost}:${dbPort}`);
-
-    // Create tables if they do not exist
     await createTablesIfNotExist();
   } catch (err) {
     isMySqlConnected = false;
     console.warn(`[Database] MySQL server not reachable (${err.code || err.message}).`);
-    console.warn(`[Database] Running in resilient embedded mode with seeded demo data.`);
-    console.warn(`[Database] To connect live MySQL 8: Start MySQL service and verify DB_PASSWORD in backend/.env`);
+    console.warn('[Database] Running in resilient embedded mode with seeded demo data.');
   }
 }
-
 /**
  * Creates tables in MySQL if connected
  */
@@ -437,37 +439,63 @@ async function createTablesIfNotExist() {
  * Universal Database Interface: Executes parameterized queries on MySQL if connected,
  * or handles operations on the local memory store.
  */
+function toPostgresSql(sql) {
+  let index = 0;
+  return sql.replace(/\?/g, () => '$' + (++index));
+}
+
+/**
+ * Shared database adapter. Existing controllers keep their parameterized `?`
+ * placeholders while PostgreSQL receives native `$1`, `$2`, ... parameters.
+ */
 export const db = {
-  isMySql() {
-    return isMySqlConnected;
-  },
-
-  getPool() {
-    return pool;
-  },
-
-  getMemoryStore() {
-    return memoryStore;
-  },
-
+  isMySql() { return isMySqlConnected; },
+  isConnected() { return isMySqlConnected; },
+  getPool() { return pool; },
+  getMemoryStore() { return memoryStore; },
   async query(sql, params = []) {
     if (isMySqlConnected && pool) {
+      if (process.env.DATABASE_URL) {
+        const result = await pool.query(toPostgresSql(sql), params);
+        return result.rows;
+      }
       const [rows] = await pool.query(sql, params);
       return rows;
     }
     return executeInMemory(sql, params);
   },
-
   async execute(sql, params = []) {
     if (isMySqlConnected && pool) {
+      if (process.env.DATABASE_URL) {
+        const result = await pool.query(toPostgresSql(sql), params);
+        return { affectedRows: result.rowCount, rowCount: result.rowCount };
+      }
       const [result] = await pool.execute(sql, params);
       return result;
     }
     return executeInMemory(sql, params);
   },
-
   async transaction(callback) {
     if (isMySqlConnected && pool) {
+      if (process.env.DATABASE_URL) {
+        const client = await pool.connect();
+        const connection = {
+          query: async (sql, params = []) => (await client.query(toPostgresSql(sql), params)).rows,
+          execute: async (sql, params = []) => {
+            const result = await client.query(toPostgresSql(sql), params);
+            return { affectedRows: result.rowCount, rowCount: result.rowCount };
+          }
+        };
+        try {
+          await client.query('BEGIN');
+          const result = await callback(connection);
+          await client.query('COMMIT');
+          return result;
+        } catch (err) {
+          await client.query('ROLLBACK');
+          throw err;
+        } finally { client.release(); }
+      }
       const conn = await pool.getConnection();
       await conn.beginTransaction();
       try {
@@ -477,19 +505,14 @@ export const db = {
       } catch (err) {
         await conn.rollback();
         throw err;
-      } finally {
-        conn.release();
-      }
-    } else {
-      // Memory store transactions are synchronous in-memory
-      return callback({
-        query: async (sql, params) => executeInMemory(sql, params),
-        execute: async (sql, params) => executeInMemory(sql, params)
-      });
+      } finally { conn.release(); }
     }
+    return callback({
+      query: async (sql, params) => executeInMemory(sql, params),
+      execute: async (sql, params) => executeInMemory(sql, params)
+    });
   }
 };
-
 /**
  * Lightweight SQL query parser for memory fallback
  */
