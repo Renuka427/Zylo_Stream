@@ -36,9 +36,10 @@ Managing subscriptions manually can be difficult when a business has many custom
 
 - **Frontend:** React.js, Tailwind CSS
 - **Backend:** Node.js, Express.js
-- **Database:** PostgreSQL
-- **Authentication:** Supabase Auth
-- **Charts:** Recharts
+- **Database:** MySQL
+- **Database Connectivity:** MySQL2
+- **Authentication & Backend Services:** Supabase
+- **Animations:** Framer Motion
 - **Version Control:** Git and GitHub
 
 ## 🎯 Project Goal
@@ -50,4 +51,4 @@ With Zylo Stream, businesses can manage their subscription activities in one pla
 ---
 
 ### 🚀 Zylo Stream
-**Your Subscriptions, Set on Autopilot.**
+**Your Subscriptions, On Autopilot.**
