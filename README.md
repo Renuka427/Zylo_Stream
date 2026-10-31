@@ -1,47 +1,38 @@
-# Subscription Management System
+# 🌊 Zylo Stream
+### Your Subscriptions, On Autopilot.
 
-A simple and efficient way to manage subscriptions, billing, invoices, and payments in one place.
+A centralized platform to manage subscriptions, automate billing, generate invoices, and track payments in one place.
 
-## About the Project
+## 📌 About the Project
 
-Managing subscriptions manually can be time-consuming, especially when a business has many customers. Tracking renewals, generating invoices, checking payments, and preparing revenue reports can lead to mistakes.
+Managing subscriptions manually can be difficult when a business has many customers. Tracking renewals, creating invoices, and checking payments takes time and can lead to mistakes.
 
-Our **Subscription Management System** aims to solve these problems by bringing everything into one platform. It helps businesses manage products, subscription plans, customers, recurring bills, discounts, and payments while reducing manual work and billing errors.
+**Zylo Stream** aims to make this process easier by bringing products, subscription plans, customers, billing, discounts, and payments together in one system. It helps businesses reduce manual work, avoid billing errors, and keep track of their revenue.
 
-## Key Features
+## ✨ Key Features
 
-- **User Management:** Separate access for admins, staff, and customers.
-- **Product Management:** Add products, set prices, and manage product variants.
-- **Subscription Plans:** Support daily, weekly, monthly, and yearly billing.
-- **Subscription Tracking:** Manage renewals, expiry dates, pauses, and cancellations.
-- **Automatic Invoicing:** Generate invoices based on subscriptions.
-- **Discount Management:** Apply fixed or percentage-based discounts based on configured rules.
-- **Payment Tracking:** Record payments and identify pending or overdue invoices.
-- **Dashboard:** View active subscriptions, revenue, and outstanding payments.
-- **Customer Portal:** Allow customers to view their subscriptions, invoices, and payment history.
+- 👥 **User Management:** Separate access for admins, staff, and customers.
+- 📦 **Product Management:** Add products, set prices, and manage variants.
+- 📅 **Subscription Plans:** Set billing cycles, prices, and availability.
+- 🔄 **Subscription Tracking:** Manage renewals, expiry dates, pauses, and cancellations.
+- 🧾 **Automated Invoicing:** Generate invoices when payments are due.
+- 🏷️ **Discount Management:** Apply fixed or percentage-based discounts.
+- 💳 **Payment Tracking:** Record payments and identify overdue invoices.
+- 📊 **Dashboard:** View active subscriptions, revenue, and pending payments.
+- 🧑‍💻 **Customer Portal:** Let customers view their subscriptions and invoices.
+- 🔐 **Authentication:** Support secure login, registration, and password recovery.
+- ⚙️ **Tax Management:** Calculate taxes automatically based on configured rules.
+- 📈 **Reports:** Track payments, subscription activity, and outstanding revenue.
 
-## User Roles
+## 👤 User Roles
 
 | Role | Responsibilities |
 |---|---|
-| Admin | Manage products, plans, discounts, taxes, staff, and reports |
-| Staff | Handle customers, subscriptions, invoices, and payments according to their permissions |
-| Customer | View and manage their own subscriptions and invoices |
+| **Admin** | Manage products, plans, taxes, discounts, staff, and reports. |
+| **Staff** | Handle customers, subscriptions, invoices, and payments based on permissions. |
+| **Customer** | View and manage their own subscriptions and invoices. |
 
-## How It Works
-
-1. The admin creates products and subscription plans.
-2. Customers register and choose a suitable plan.
-3. The system creates and manages their subscriptions.
-4. Invoices are generated when billing is due.
-5. Payments are recorded against the corresponding invoices.
-6. The dashboard displays subscription details and payment information.
-
-This makes it easier for businesses to manage the entire subscription process from one place.
-
-## Technology Stack
-
-The planned technology stack includes:
+## 🛠️ Technology Stack
 
 - **Frontend:** React.js, Tailwind CSS
 - **Backend:** Node.js, Express.js
@@ -49,3 +40,14 @@ The planned technology stack includes:
 - **Authentication:** Supabase Auth
 - **Charts:** Recharts
 - **Version Control:** Git and GitHub
+
+## 🎯 Project Goal
+
+Our goal is to make subscription management simpler by automating billing, keeping payment records organized, and giving businesses a clear view of their revenue.
+
+With Zylo Stream, businesses can manage their subscription activities in one place instead of relying on spreadsheets and manual work.
+
+---
+
+### 🚀 Zylo Stream
+**Your Subscriptions, Set on Autopilot.**
