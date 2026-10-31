@@ -36,26 +36,26 @@ export const FinalCtaSection = () => {
         </p>
 
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/register" className="w-full sm:w-auto">
+          <Link to="/customer/dashboard" className="w-full sm:w-auto">
             <Button
               variant="primary"
               size="lg"
               icon={ArrowRight}
               className="w-full sm:w-auto bg-ivory text-cherry-dark hover:bg-champagne hover:text-cherry font-bold shadow-xl border-none"
             >
-              Get Started
+              Explore Platform
             </Button>
           </Link>
 
-          <a href="#features" onClick={scrollToFeatures} className="w-full sm:w-auto">
+          <Link to="/admin/login" className="w-full sm:w-auto">
             <Button
               variant="secondary"
               size="lg"
               className="w-full sm:w-auto bg-white/10 border-white/20 text-ivory hover:bg-white/20 hover:text-white"
             >
-              Explore Features
+              Administrator Access
             </Button>
-          </a>
+          </Link>
         </div>
 
         <div className="pt-4 text-xs text-champagne/70 flex items-center justify-center gap-2">

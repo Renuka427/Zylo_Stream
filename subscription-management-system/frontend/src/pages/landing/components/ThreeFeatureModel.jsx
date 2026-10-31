@@ -477,7 +477,7 @@ export const ThreeFeatureModel = () => {
               size="md"
               icon={ArrowRight}
               className="w-full shadow-luxury text-xs py-2.5"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/admin/dashboard')}
             >
               Enter Executive Overview
             </Button>

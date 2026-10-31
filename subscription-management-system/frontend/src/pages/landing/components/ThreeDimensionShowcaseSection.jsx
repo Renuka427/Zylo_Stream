@@ -44,7 +44,7 @@ export const ThreeDimensionShowcaseSection = () => {
             </div>
           </div>
 
-          <Link to="/dashboard" className="shrink-0 w-full sm:w-auto">
+          <Link to="/admin/dashboard" className="shrink-0 w-full sm:w-auto">
             <Button variant="primary" size="lg" icon={ArrowRight} className="w-full sm:w-auto shadow-luxury">
               Go to Executive Overview
             </Button>

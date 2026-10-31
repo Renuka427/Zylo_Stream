@@ -29,8 +29,8 @@ export const RegisterPage = () => {
     }
     setError('');
     register({ companyName, fullName, email });
-    showToast(`Organization "${companyName}" provisioned! (Demo Mode)`);
-    navigate('/dashboard');
+    showToast(`Organization "${companyName}" provisioned! (Customer Demo Mode)`);
+    navigate('/customer/dashboard');
   };
 
   return (

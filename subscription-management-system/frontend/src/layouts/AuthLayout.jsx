@@ -22,11 +22,11 @@ export const AuthLayout = () => {
         </Link>
 
         <Link
-          to="/dashboard"
+          to="/"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ivory border border-stone-warm text-xs font-medium text-espresso hover:border-cherry transition-colors shadow-sm"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Skip to Demo Dashboard</span>
+          <span>Return to Landing Page</span>
         </Link>
       </header>
 
