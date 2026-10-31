@@ -14,6 +14,7 @@ import { AdminLoginPage } from '../pages/auth/AdminLoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage';
+import { AuthCallbackPage } from '../pages/auth/AuthCallbackPage';
 import { AccessDeniedPage } from '../pages/auth/AccessDeniedPage';
 
 // Customer Portal Pages
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
       {
         path: 'reset-password',
         element: <ResetPasswordPage />
+      },
+      {
+        path: 'auth/callback',
+        element: <AuthCallbackPage />
       },
       // Backwards-compatible /auth aliases
       {
